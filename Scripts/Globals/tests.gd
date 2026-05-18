@@ -7,5 +7,5 @@ func _ready():
 		run_tests()
 
 func run_tests():
-	Logger.info("Running all tests...")
+	AppLogger.info("Running all tests...")
 	TestGitIgnore.run_all_gitignore_tests()

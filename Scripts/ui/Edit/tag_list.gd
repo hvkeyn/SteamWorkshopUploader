@@ -24,4 +24,4 @@ func on_tag_toggled(toggled_on:bool, tag:String) -> void:
 		current_tags.append(tag)
 	else:
 		current_tags.erase(tag)
-	Logger.info("Tag list is now " + str(current_tags))
+	AppLogger.info("Tag list is now " + str(current_tags))

@@ -23,7 +23,7 @@ func _on_pressed() -> void:
 	dialog.popup_centered_ratio(0.8)
 
 func on_dir_selected(path:String) -> void:
-	Logger.info("Got target folder: " + path)
+	AppLogger.info("Got target folder: " + path)
 	upload_target_path = path
 	target_path_changed.emit(upload_target_path)
 	UserPreferences.fetch().last_browse_dir = path

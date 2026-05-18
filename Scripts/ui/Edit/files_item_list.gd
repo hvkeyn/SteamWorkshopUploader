@@ -60,10 +60,10 @@ func should_include_hidden_files() -> bool:
 
 ## Called when is_exclude_enabled changes.
 func on_change_is_exclude_enabled(_new_value:bool) -> void:
-	Logger.info("File exclusion toggled.")
+	AppLogger.info("File exclusion toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# Recursively enable inclusion on the root path, then update button statuses.
@@ -74,10 +74,10 @@ func on_change_is_exclude_enabled(_new_value:bool) -> void:
 
 ## Called when is_steamignore_enabled changes.
 func on_change_is_steamignore_enabled(_new_value:bool) -> void:
-	Logger.info("steamignore toggled.")
+	AppLogger.info("steamignore toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We basically have to re-compute the inclusion list.
@@ -85,10 +85,10 @@ func on_change_is_steamignore_enabled(_new_value:bool) -> void:
 
 ## Called when should_hide_excluded changes.
 func on_change_should_hide_excluded(_new_value:bool) -> void:
-	Logger.info("Hide exclusion toggled.")
+	AppLogger.info("Hide exclusion toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We have to re-add the excluded items,
@@ -97,10 +97,10 @@ func on_change_should_hide_excluded(_new_value:bool) -> void:
 
 ## Called when should_include_hidden_files changes.
 func on_change_should_include_hidden_files(_new_value:bool) -> void:
-	Logger.info("Include hidden toggled.")
+	AppLogger.info("Include hidden toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We basically have to re-compute the inclusion list.
@@ -108,7 +108,7 @@ func on_change_should_include_hidden_files(_new_value:bool) -> void:
 
 ## Called when target path changes.
 func on_target_path_changed(_path:String) -> void:
-	Logger.info("Target path changed.")
+	AppLogger.info("Target path changed.")
 	self.call_deferred("reset_include_list")
 
 ## Called when any include/exclude button is pressed.
@@ -116,7 +116,7 @@ func on_button_pressed(item: TreeItem, _column: int, _button_id: int, _mouse_but
 	var data = paths_by_tree_item[item.get_instance_id()]
 	var relative_path = data["relative_path"]
 	var include = not include_list[relative_path]
-	Logger.info("Pressed button for path: " + data["relative_path"] + " = " + str(include))
+	AppLogger.info("Pressed button for path: " + data["relative_path"] + " = " + str(include))
 
 	# set_include_state assigns values of include_list but recursively.
 	set_include_state(relative_path, include)
@@ -135,7 +135,7 @@ func render_blank_list() -> void:
 
 ## Empties the include list, and repopulates the list of files.
 func reset_include_list() -> void:
-	Logger.info("Hard-resetting file include list...")
+	AppLogger.info("Hard-resetting file include list...")
 	var root_path = get_target_path()
 
 	# Remove all entries.
@@ -289,7 +289,7 @@ func refresh_node_buttons(root_node:TreeItem = null) -> void:
 
 func set_include_state(relative_path:String, state:bool, recursive:bool = true) -> void:
 	if relative_path == null:
-		Logger.error("Tried to set include state of invalid path!")
+		AppLogger.error("Tried to set include state of invalid path!")
 		return
 	
 	include_list[relative_path] = state
@@ -318,7 +318,7 @@ func export_data() -> Dictionary[String, PackedStringArray]:
 			result["relative_paths"].append(relative_path)
 	
 	if result["absolute_paths"].size() != result["relative_paths"].size():
-		Logger.error("Export list not generated correctly!")
+		AppLogger.error("Export list not generated correctly!")
 		return {}
 	
 	return result

@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c8r01vv0beco5" path="res://scenes/ui/Toolbar.tscn" id="2_erwvk"]
 [ext_resource type="Script" uid="uid://b342xwbp7nm60" path="res://scripts/ui/Main/tos_label.gd" id="2_grg3l"]
 [ext_resource type="Texture2D" uid="uid://bjqehcmwdbxej" path="res://assets/textures/steamapps/480.png" id="2_vy5pj"]
-[ext_resource type="Script" uid="uid://3p37wkj84lpt" path="res://scripts/ui/Main/steam_app_dropdown.gd" id="3_kln2b"]
+[ext_resource type="Script" path="res://Scripts/ui/Main/steam_app_picker.gd" id="3_kln2b"]
 [ext_resource type="Script" uid="uid://cac2ny4wmuofy" path="res://scripts/ui/Main/steam_status_label.gd" id="3_pbw6q"]
 [ext_resource type="Script" uid="uid://daayx8fqniktl" path="res://scripts/ui/Main/steam_initialize_button.gd" id="3_rgh2o"]
 [ext_resource type="Script" uid="uid://cb5jd314a4s41" path="res://scripts/ui/Main/workshop_type_dropdown.gd" id="10_4kpch"]
@@ -44,6 +44,7 @@ theme_override_constants/margin_top = 0
 
 [node name="MainPanel" type="Panel" parent="VBox/OuterMargin"]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="MainPanelMargin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel"]
 layout_mode = 1
@@ -57,6 +58,7 @@ theme_override_constants/margin_top = 4
 
 [node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin"]
 layout_mode = 2
+size_flags_vertical = 3
 theme = ExtResource("1_r150o")
 
 [node name="Header" type="RichTextLabel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox"]
@@ -77,6 +79,7 @@ script = ExtResource("2_grg3l")
 
 [node name="MarginContainer" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = ExtResource("1_r150o")
 theme_override_constants/margin_left = 0
@@ -86,70 +89,79 @@ theme_override_constants/margin_bottom = 0
 
 [node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="HBox" type="HBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
 
 [node name="Panel1" type="Panel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox"]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme = ExtResource("1_r150o")
 
 [node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -203.0
-offset_right = 203.0
-offset_bottom = 138.0
-grow_horizontal = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin"]
 layout_mode = 2
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme = ExtResource("1_r150o")
 
 [node name="LabelSteamStatus" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 0
 text = "Steam Status: Not Connected"
 horizontal_alignment = 1
 script = ExtResource("3_pbw6q")
 
 [node name="Separator" type="HSeparator" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 
-[node name="HBox" type="HBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
+[node name="LabelGames" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 layout_mode = 2
-alignment = 1
+size_flags_vertical = 0
+text = "Your Steam library:"
 
-[node name="LabelSteamApp" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/HBox"]
-layout_mode = 2
-text = "Steam App: "
-
-[node name="SteamAppDropdown" type="OptionButton" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/HBox"]
+[node name="SteamAppFilter" type="LineEdit" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme = ExtResource("1_r150o")
-item_count = 1
-popup/item_0/text = "Spacewar"
-popup/item_0/icon = ExtResource("2_vy5pj")
-popup/item_0/id = 480
+size_flags_horizontal = 3
+size_flags_vertical = 0
+placeholder_text = "Search game by name or AppID…"
+
+[node name="SteamAppList" type="ItemList" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+allow_reselect = true
 script = ExtResource("3_kln2b")
 
 [node name="ButtonSteamInitialize" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+size_flags_vertical = 0
 focus_mode = 0
 theme = ExtResource("1_r150o")
-disabled = true
 text = "Initialize Steam Connection"
 script = ExtResource("3_rgh2o")
 
@@ -277,26 +289,30 @@ disabled = true
 text = "Edit UGC Item"
 script = ExtResource("16_2w5on")
 
-[node name="Panel" type="Panel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
+[node name="LogSeparator" type="HSeparator" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
+size_flags_horizontal = 3
+size_flags_vertical = 0
 
-[node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TextViewLogDisplay" type="TextEdit" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/Panel/Margin"]
+[node name="LabelLog" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+text = "Log:"
+
+[node name="TextViewLogDisplay" type="TextEdit" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 1.25
+custom_minimum_size = Vector2(0, 180)
 editable = false
+wrap_mode = 1
 script = ExtResource("15_h1m7h")
 
 [connection signal="meta_clicked" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/TOSLabel" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/TOSLabel" method="_on_meta_clicked"]
-[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/HBox/SteamAppDropdown" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/HBox/SteamAppDropdown" method="_on_item_selected"]
+[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" method="_on_item_selected"]
+[connection signal="item_activated" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" method="_on_item_activated"]
 [connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/ButtonSteamInitialize" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/ButtonSteamInitialize" method="_on_pressed"]
 [connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/DropdownWorkshopType" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/DropdownWorkshopType" method="_on_item_selected"]
 [connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/ButtonWorkshopCreate" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/ButtonWorkshopCreate" method="_on_button_pressed"]

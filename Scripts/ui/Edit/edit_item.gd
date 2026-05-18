@@ -63,14 +63,14 @@ func load_preview_from_url(url:String) -> void:
 	WebImage.load_image_from_url(url, %SpritePreviewImage)
 
 func _on_button_revert_pressed() -> void:
-	Logger.info("Reverting UGC changes...")
+	AppLogger.info("Reverting UGC changes...")
 	reset_fields()
 
 func get_visiblity() -> Steam.RemoteStoragePublishedFileVisibility:
 	return %OptionButtonVisibility.get_item_id(%OptionButtonVisibility.selected)
 
 func _on_button_submit_pressed() -> void:
-	Logger.info("Submitting UGC changes...")
+	AppLogger.info("Submitting UGC changes...")
 	
 	var file_id:int = Steamworks.current_ugc_item["file_id"]
 	var new_ugc_data = Steamworks.current_ugc_item.duplicate()
@@ -78,7 +78,7 @@ func _on_button_submit_pressed() -> void:
 	new_ugc_data["title"] = %LineEditTitle.text
 	
 	if %CheckBoxDescriptionShouldUpdate.button_pressed:
-		Logger.info("Including description in upload...")
+		AppLogger.info("Including description in upload...")
 		new_ugc_data["description"] = %RichTextDescription.text
 	else:
 		new_ugc_data["description"] = ""
@@ -94,44 +94,44 @@ func _on_button_submit_pressed() -> void:
 	var change_notes:String = %LineEditChangeNotes.text
 	
 	if change_notes == "":
-		Logger.error("Can't upload, must include change notes!")
+		AppLogger.error("Can't upload, must include change notes!")
 		return
 
 	var upload_dir:String = ""
 	var base_dir:String = %ButtonBrowseFiles.upload_target_path
 	
 	if base_dir == "":
-		Logger.info("No file upload specified, ignoring...")
+		AppLogger.info("No file upload specified, ignoring...")
 	elif %CheckBoxExcludeFiles.button_pressed:
 		# Exclusion enabled!
-		Logger.info("File upload specified: " + base_dir)
+		AppLogger.info("File upload specified: " + base_dir)
 		#specified with exclusion, copying to , ignoring...")
 		var temp_dir = TempFolder.create_temp_folder()
 		
 		var export_data:Dictionary[String, PackedStringArray] = %ItemListFiles.export_data()
 		
 		if export_data.size() == 0:
-			Logger.error("Couldn't build file list for upload!")
-			Logger.error("CANCELLING upload!")
+			AppLogger.error("Couldn't build file list for upload!")
+			AppLogger.error("CANCELLING upload!")
 			return
 		
 		var relative_paths = export_data["relative_paths"]
 		var absolute_paths = export_data["absolute_paths"]
 		var count = relative_paths.size()
 		
-		Logger.info("Copying " + str(count) + " files to: " + temp_dir)
+		AppLogger.info("Copying " + str(count) + " files to: " + temp_dir)
 		
 		var success = TempFolder.copy_files_to_folder(temp_dir, absolute_paths, relative_paths)
 		if not success:
-			Logger.error("Failed to copy files to temp folder!")
-			Logger.error("CANCELLING upload!")
+			AppLogger.error("Failed to copy files to temp folder!")
+			AppLogger.error("CANCELLING upload!")
 			return
 		
 		upload_dir = temp_dir
 	else:
 		# Exclusion disabled!
-		Logger.info("File upload specified: " + base_dir)
-		Logger.info("Exclusion disabled, copying folder as-is...")
+		AppLogger.info("File upload specified: " + base_dir)
+		AppLogger.info("Exclusion disabled, copying folder as-is...")
 		upload_dir = base_dir
 
 	new_ugc_data["upload_path"] = upload_dir

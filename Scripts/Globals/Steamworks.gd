@@ -1,6 +1,15 @@
 extends Node
 
+const LibraryScanner = preload("res://Scripts/steam_library_scanner.gd")
+const MasterList = preload("res://Scripts/steam_master_app_list.gd")
+
 @export var steam_apps: Array[SteamApp] = []
+
+var _curated_steam_apps: Array[SteamApp] = []
+var _name_fetcher: Node = null
+var _master_list_loader: Node = null
+var _is_shutting_down: bool = false
+var _library_loaded: bool = false
 
 var app_id:int = -1;
 
@@ -32,21 +41,183 @@ signal item_deleted(result:int, file_id: int)
 signal item_downloaded(result:int, file_id: int, app_id:int)
 signal item_installed(app_id:int, file_id: int)
 signal ugc_query_completed(handle: int, result:int, results_returned:int, total_matching:int, cached:bool)
+signal steam_apps_loaded
+signal steam_app_names_updated
+signal steam_context_changed
 
 #
 # Initialization Methods
 #
 
 func _ready():
+	_curated_steam_apps = steam_apps.duplicate()
+	_name_fetcher = get_node_or_null("SteamAppNameFetcher")
+	if _name_fetcher:
+		_name_fetcher.names_updated.connect(_on_steam_app_names_updated)
+	_master_list_loader = get_node_or_null("SteamMasterAppListLoader")
+	if _master_list_loader:
+		_master_list_loader.master_list_ready.connect(_on_master_list_ready)
+	if MasterList.ensure_loaded():
+		call_deferred("refresh_steam_apps_from_library")
+
 	if Engine.has_singleton("Steam"):
 		connect_signals()
-		Logger.info("Successfully initialized Steamworks callbacks.")
+		AppLogger.info("Successfully initialized Steamworks callbacks.")
 
-func start_steam():
-	if Engine.has_singleton("Steam"):
-		initialize()
+
+func call_on_apps_loaded(callback: Callable) -> void:
+	if _library_loaded and not steam_apps.is_empty():
+		callback.call()
 	else:
-		Logger.error("GodotSteam is not initialized!")
+		steam_apps_loaded.connect(callback, CONNECT_ONE_SHOT)
+
+
+func refresh_steam_apps_from_library() -> void:
+	var result: Dictionary = LibraryScanner.discover()
+	if not result.get("ok", false):
+		AppLogger.error("Steam library scan failed: " + str(result["error"]))
+		if _curated_steam_apps.is_empty():
+			steam_apps = []
+		else:
+			steam_apps = _curated_steam_apps.duplicate()
+		_library_loaded = true
+		steam_apps_loaded.emit()
+		return
+
+	steam_apps = _build_steam_apps_from_scan(result["apps"])
+	_apply_cached_names_to_apps()
+	_library_loaded = true
+	AppLogger.info("Loaded %d games from local Steam account." % steam_apps.size())
+	steam_apps_loaded.emit()
+	fetch_unresolved_names()
+
+
+func _build_steam_apps_from_scan(entries: Array) -> Array[SteamApp]:
+	var curated_by_id: Dictionary = {}
+	for app in _curated_steam_apps:
+		curated_by_id[app.app_id] = app
+
+	var built: Array[SteamApp] = []
+	for entry in entries:
+		if not entry is Dictionary:
+			continue
+		var app_id: int = int(entry.get("app_id", -1))
+		if app_id <= 0:
+			continue
+		var app := SteamApp.new()
+		app.app_id = app_id
+		app.name = str(entry.get("name", "App %d" % app_id))
+		if curated_by_id.has(app_id):
+			var curated: SteamApp = curated_by_id[app_id]
+			if not curated.tags.is_empty():
+				app.tags = curated.tags
+			if curated.icon:
+				app.icon = curated.icon
+		if app.icon == null:
+			app.icon = LibraryScanner.get_local_icon(app_id)
+		built.append(app)
+	return built
+
+
+func _on_steam_app_names_updated() -> void:
+	_apply_cached_names_to_apps()
+	var changed := false
+	if _name_fetcher:
+		var cache: Dictionary = LibraryScanner.load_name_cache()
+		for app in steam_apps:
+			var cached_name := str(cache.get(str(app.app_id), ""))
+			if cached_name.is_empty():
+				continue
+			if app.name != cached_name:
+				app.name = cached_name
+				changed = true
+	if changed:
+		steam_app_names_updated.emit()
+
+
+func get_cached_app_name(app_id: int) -> String:
+	if _name_fetcher:
+		return _name_fetcher.get_cached_name(app_id)
+	return ""
+
+
+func _on_master_list_ready(count: int) -> void:
+	if not _library_loaded:
+		refresh_steam_apps_from_library()
+	elif count > 0:
+		_apply_cached_names_to_apps()
+		steam_app_names_updated.emit()
+		fetch_unresolved_names()
+
+
+func fetch_unresolved_names() -> void:
+	if _name_fetcher == null or steam_apps.is_empty():
+		return
+	var missing: Array[int] = []
+	for app in steam_apps:
+		if app.name.begins_with("App "):
+			missing.append(app.app_id)
+	if missing.is_empty():
+		return
+	AppLogger.info("Resolving names for %d games (Store API)…" % missing.size())
+	_name_fetcher.fetch_missing(missing)
+
+
+func _apply_cached_names_to_apps() -> void:
+	for app in steam_apps:
+		if not app.name.begins_with("App "):
+			continue
+		var cached_name := MasterList.lookup_app_name(app.app_id)
+		if cached_name.is_empty() and _name_fetcher:
+			cached_name = _name_fetcher.get_cached_name(app.app_id)
+		if not cached_name.is_empty():
+			app.name = cached_name
+
+
+func prioritize_app_names(app_ids: Array) -> void:
+	if _name_fetcher:
+		_name_fetcher.prioritize(app_ids)
+
+
+func start_steam() -> void:
+	ensure_initialized_for_app(app_id)
+
+
+func shutdown_steam() -> void:
+	if is_initialized and Engine.has_singleton("Steam"):
+		Steam.steamShutdown()
+	is_initialized = false
+	ugc_items.clear()
+	_ugc_request_handle = -1
+	_page_number = 1
+	steam_context_changed.emit()
+
+
+func shutdown() -> void:
+	if _is_shutting_down:
+		return
+	_is_shutting_down = true
+	if _name_fetcher:
+		_name_fetcher.stop()
+	if _master_list_loader and _master_list_loader.has_method("stop"):
+		_master_list_loader.stop()
+	shutdown_steam()
+
+
+func ensure_initialized_for_app(target_app_id: int) -> void:
+	if not Engine.has_singleton("Steam"):
+		AppLogger.error("GodotSteam is not initialized!")
+		return
+	if target_app_id <= 0:
+		AppLogger.error("Can't init Steamworks, app ID not selected!")
+		return
+	if is_initialized and app_id == target_app_id:
+		return
+	if is_initialized:
+		shutdown_steam()
+	app_id = target_app_id
+	initialize()
+
 
 func connect_signals():
 	# Steam.connect("stea", on_steamworks_error, CONNECT_PERSIST)
@@ -68,22 +239,33 @@ func initialize():
 		return
 	
 	if app_id == -1:
-		Logger.error("Can't init Steamworks, app ID not selected!")
+		AppLogger.error("Can't init Steamworks, app ID not selected!")
 		return
 	
 	var result:Dictionary = Steam.steamInitEx(app_id, false)
 	var success = result["status"] == Steam.STEAM_API_INIT_RESULT_OK
 	if success:
-		Logger.info("Successfully initialized Steamworks!")
+		AppLogger.info("Successfully initialized Steamworks!")
 		is_initialized = true
 		
 		steamworks_init.emit()
+		steam_context_changed.emit()
 	else:
-		Logger.error("Steam failed to initialize. Status: " + result["status"] + ", Info: " + result["verbal"])
+		AppLogger.error("Steam failed to initialize. Status: " + result["status"] + ", Info: " + result["verbal"])
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		shutdown()
+
+
+func _exit_tree() -> void:
+	shutdown()
+
 
 func _process(_delta: float) -> void:
-	# Run callbacks to handle Steam events every frame
-	Steam.run_callbacks()
+	if is_initialized and Engine.has_singleton("Steam"):
+		Steam.run_callbacks()
 	
 #
 # Query Methods
@@ -144,7 +326,7 @@ func update_workshop_item(file_id:int, new_params:Dictionary, change_notes:Strin
 		Steam.setItemContent(_ugc_update_handle, new_params["upload_path"])
 
 	if new_params["preview_path"] != "":
-		Logger.info("Uploading item preview: " + new_params["preview_path"])
+		AppLogger.info("Uploading item preview: " + new_params["preview_path"])
 		Steam.setItemPreview(_ugc_update_handle, new_params["preview_path"])
 
 	# Result will be received by on_item_updated
@@ -155,11 +337,11 @@ var _page_number:int = 1
 
 func query_published_items(page:int = 1):
 	if not is_initialized:
-		Logger.error("Could not query published items, Steam not initialized!")
+		AppLogger.error("Could not query published items, Steam not initialized!")
 		return
 	
 	if _ugc_request_handle != -1:
-		Logger.error("Could not query published items, request already in progress!")
+		AppLogger.error("Could not query published items, request already in progress!")
 		return
 	
 	var list = Steam.UserUGCList.USER_UGC_LIST_PUBLISHED
@@ -193,43 +375,43 @@ func fetch_queried_ugc_items(count: int):
 #
 
 func on_current_stats_received():
-	Logger.info("[STEAM] Current stats received")
+	AppLogger.info("[STEAM] Current stats received")
 	emit_signal("current_stats_received")
 	
 func on_item_created(result:int, file_id: int, accept_tos:bool):
-	Logger.info("[STEAM] Item created: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
+	AppLogger.info("[STEAM] Item created: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
 	emit_signal("item_created", result, file_id, accept_tos)
 
 	if accept_tos:
 		open_tos_url()
 	
 func on_item_updated(result: int, accept_tos:bool):
-	Logger.info("[STEAM] Item updated: " + SteamResult.stringify(result))
+	AppLogger.info("[STEAM] Item updated: " + SteamResult.stringify(result))
 	emit_signal("item_updated", result, accept_tos)
 
 	if accept_tos:
 		open_tos_url()
 	
 func on_item_deleted(result:int, file_id: int):
-	Logger.info("[STEAM] Item deleted: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
+	AppLogger.info("[STEAM] Item deleted: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
 	emit_signal("item_deleted", result, file_id)
 	
 func on_item_downloaded(result:int, file_id: int, _app_id:int):
-	Logger.info("[STEAM] Item downloaded: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
+	AppLogger.info("[STEAM] Item downloaded: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
 	emit_signal("item_downloaded", result, file_id, _app_id)
 	
 func on_item_installed(_app_id:int, file_id: int):
-	Logger.info("[STEAM] Item installed: " + str(file_id))
+	AppLogger.info("[STEAM] Item installed: " + str(file_id))
 	emit_signal("item_installed", _app_id, file_id)
 	
 func on_ugc_query_completed(handle: int, result:int, results_returned:int, total_matching:int, cached:bool):
-	Logger.info("[STEAM] UGC query completed (result: " + SteamResult.stringify(result) + "), got " + str(results_returned) + " items")
+	AppLogger.info("[STEAM] UGC query completed (result: " + SteamResult.stringify(result) + "), got " + str(results_returned) + " items")
 	emit_signal("ugc_query_completed", handle, result, results_returned, total_matching, cached)
 	
 	if result == Steam.RESULT_OK:
 		fetch_queried_ugc_items(results_returned)
 	else:
-		Logger.error("Couldn't get published UGC: " + SteamResult.stringify(result))
+		AppLogger.error("Couldn't get published UGC: " + SteamResult.stringify(result))
 	
 	_ugc_request_handle = -1
 		
@@ -240,13 +422,13 @@ func on_ugc_query_completed(handle: int, result:int, results_returned:int, total
 		steamworks_ugc_items_retrieved.emit()
 	
 func on_dlc_installed(_app_id:int):
-	Logger.info("[STEAM] DLC installed: " + str(_app_id))
+	AppLogger.info("[STEAM] DLC installed: " + str(_app_id))
 	emit_signal("dlc_installed", _app_id)
 	
 func on_user_subscribed_items_list_changed(_app_id:int):
-	Logger.info("[STEAM] User subscribed items list changed")
+	AppLogger.info("[STEAM] User subscribed items list changed")
 	emit_signal("user_subscribed_items_list_changed", _app_id)
 
 func on_overlay_toggled(active:bool, user_initiated:bool, _app_id:int):
-	Logger.info("[STEAM] Overlay toggled: " + str(active) + " (user? " + str(user_initiated) + ")")
+	AppLogger.info("[STEAM] Overlay toggled: " + str(active) + " (user? " + str(user_initiated) + ")")
 	emit_signal("overlay_toggled", active, user_initiated)

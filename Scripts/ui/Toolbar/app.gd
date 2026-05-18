@@ -13,8 +13,8 @@ func _on_index_pressed(index: int) -> void:
 	var id = get_item_id(index)
 	match id:
 		Item.QUIT:
-			# Quit the application.
-			Logger.info("Quitting application! Bye :)")
-			get_tree().quit()
+			AppLogger.info("Quitting application! Bye :)")
+			Steamworks.shutdown()
+			get_tree().quit(0)
 		_:
-			Logger.error("Unknown item pressed: App#" + str(index))
+			AppLogger.error("Unknown item pressed: App#" + str(index))

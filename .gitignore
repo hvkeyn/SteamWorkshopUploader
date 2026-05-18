@@ -3,3 +3,6 @@
 /android/
 /export/
 *.tmp
+
+# Local Godot editor install (use start.ps1 to point at your copy)
+Godot_v4.6.2/

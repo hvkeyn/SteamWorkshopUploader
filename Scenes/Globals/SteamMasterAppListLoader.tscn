@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://steammasterlistloader"]
+
+[ext_resource type="Script" path="res://Scripts/steam_master_app_list_loader.gd" id="1_loader"]
+
+[node name="SteamMasterAppListLoader" type="Node"]
+script = ExtResource("1_loader")

@@ -1,12 +1,12 @@
 extends TextEdit
 
 func _ready() -> void:
-	Logger.log_any.connect(on_log_any)
+	AppLogger.log_any.connect(on_log_any)
 
 	on_log_any("")
 
 func on_log_any(_last_msg:String) -> void:
-	var messages:Array[String] = Logger.get_messages()
+	var messages:Array[String] = AppLogger.get_messages()
 	var messages_formatted = "\n".join(messages)
 	
 	self.text = messages_formatted
