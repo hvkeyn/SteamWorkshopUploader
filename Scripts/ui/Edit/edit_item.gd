@@ -1,48 +1,196 @@
 extends Control
 
+const DraftStore = preload("res://Scripts/ugc_draft_store.gd")
+
+var _save_draft_queued: bool = false
+var _suppress_draft_save: bool = false
+var _autosave_connected: bool = false
+
+
 func _ready() -> void:
+	add_to_group("ugc_edit_screen")
+	call_deferred("_load_editor_state")
+
+
+func _get_file_id() -> int:
+	return int(Steamworks.current_ugc_item.get("file_id", -1))
+
+
+func _load_editor_state() -> void:
+	_suppress_draft_save = true
+	_save_draft_queued = false
+
+	var file_id := _get_file_id()
+	var draft: Dictionary = DraftStore.get_draft(file_id)
+
 	reset_fields()
-	
-func reset_fields():
-	var file_id:int = Steamworks.current_ugc_item["file_id"]
-	var title:String = Steamworks.current_ugc_item["title"]
-	var description:String = Steamworks.current_ugc_item["description"]
+	if file_id > 0 and not _is_draft_empty(draft):
+		_apply_draft(draft)
 
-	var visibility:int = Steamworks.current_ugc_item["visibility"]
+	_suppress_draft_save = false
+	if not _autosave_connected:
+		_connect_draft_autosave()
+		_autosave_connected = true
 
-	var score:float = Steamworks.current_ugc_item["score"]
-	var votes_up:int = Steamworks.current_ugc_item["votes_up"]
-	var votes_down:int = Steamworks.current_ugc_item["votes_down"]
-	
-	var preview_url:String = Steamworks.current_ugc_item["preview_url"]
 
-	var time_created:int = Steamworks.current_ugc_item["time_created"]
-	var time_updated:int = Steamworks.current_ugc_item["time_updated"]
+func _connect_draft_autosave() -> void:
+	%LineEditTitle.text_changed.connect(_on_draft_field_changed)
+	%TextEditDescription.text_changed.connect(_on_draft_field_changed)
+	%LineEditChangeNotes.text_changed.connect(_on_draft_field_changed)
+	%OptionButtonVisibility.item_selected.connect(func(_i): _queue_save_draft())
+	%CheckBoxDescriptionShouldUpdate.toggled.connect(func(_t): _queue_save_draft())
+	if has_node("%ButtonBrowseFiles"):
+		%ButtonBrowseFiles.target_path_changed.connect(func(_p): _queue_save_draft())
+	%ButtonSelectPreviewImage.preview_changed.connect(func(_p): _queue_save_draft())
+	%HBoxTagList.tags_changed.connect(_on_draft_field_changed)
+	var tabs := $VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer as TabContainer
+	if tabs:
+		tabs.tab_changed.connect(func(_t): _queue_save_draft())
 
-	var time_created_str:String = Time.get_datetime_string_from_unix_time(time_created)
-	var time_updated_str:String = Time.get_datetime_string_from_unix_time(time_updated)
 
-	var _tags_truncated:bool = Steamworks.current_ugc_item["tags_truncated"]
-	var tags:String = Steamworks.current_ugc_item["tags"]
+func _on_draft_field_changed(_arg: Variant = null) -> void:
+	_queue_save_draft()
+
+
+func _queue_save_draft() -> void:
+	if _suppress_draft_save:
+		return
+	if _save_draft_queued:
+		return
+	_save_draft_queued = true
+	call_deferred("_save_draft")
+
+
+func save_draft_now() -> void:
+	if _suppress_draft_save:
+		return
+	_save_draft_queued = false
+	_save_draft()
+
+
+func _save_draft() -> void:
+	_save_draft_queued = false
+	if _suppress_draft_save:
+		return
+	var file_id := _get_file_id()
+	if file_id <= 0:
+		return
+	var payload := {
+		"title": %LineEditTitle.text,
+		"description": %TextEditDescription.text,
+		"visibility": %OptionButtonVisibility.get_item_id(%OptionButtonVisibility.selected),
+		"description_should_update": %CheckBoxDescriptionShouldUpdate.button_pressed,
+		"tags": %HBoxTagList.current_tags.duplicate(),
+		"preview_path": %ButtonSelectPreviewImage.preview_image_path,
+		"upload_path": %ButtonBrowseFiles.upload_target_path if has_node("%ButtonBrowseFiles") else "",
+		"change_notes": %LineEditChangeNotes.text,
+	}
+	DraftStore.set_draft(file_id, payload)
+
+
+func _is_draft_empty(draft: Dictionary) -> bool:
+	if draft.is_empty():
+		return true
+	if str(draft.get("title", "")).strip_edges() != "":
+		return false
+	if str(draft.get("description", "")).strip_edges() != "":
+		return false
+	if str(draft.get("change_notes", "")).strip_edges() != "":
+		return false
+	if str(draft.get("preview_path", "")).strip_edges() != "":
+		return false
+	if str(draft.get("upload_path", "")).strip_edges() != "":
+		return false
+	var tags: Variant = draft.get("tags", [])
+	if tags is Array and not tags.is_empty():
+		return false
+	return true
+
+
+func _apply_draft(draft: Dictionary) -> void:
+	if draft.has("title"):
+		%LineEditTitle.text = str(draft["title"])
+	if draft.has("visibility"):
+		var vis_id: int = int(draft["visibility"])
+		var vis_idx: int = %OptionButtonVisibility.get_item_index(vis_id)
+		if vis_idx >= 0:
+			%OptionButtonVisibility.selected = vis_idx
+	%CheckBoxDescriptionShouldUpdate.set_block_signals(true)
+	if draft.has("description_should_update"):
+		%CheckBoxDescriptionShouldUpdate.button_pressed = bool(draft["description_should_update"])
+	%TextEditDescription.editable = %CheckBoxDescriptionShouldUpdate.button_pressed
+	%CheckBoxDescriptionShouldUpdate.set_block_signals(false)
+	if draft.has("description"):
+		var desc := str(draft["description"])
+		%TextEditDescription.text = desc
+		%RichTextDescription.text = desc
+	if draft.has("change_notes"):
+		%LineEditChangeNotes.text = str(draft["change_notes"])
+	if draft.has("tags") and %HBoxTagList.has_method("set_tags"):
+		%HBoxTagList.set_tags(draft["tags"] as Array)
+	var preview_path := str(draft.get("preview_path", ""))
+	if preview_path != "" and FileAccess.file_exists(preview_path):
+		%ButtonSelectPreviewImage.preview_image_path = preview_path
+		WebImage.load_from_path(preview_path, %SpritePreviewImage)
+	var upload_path := str(draft.get("upload_path", ""))
+	if upload_path != "" and has_node("%ButtonBrowseFiles"):
+		%ButtonBrowseFiles.upload_target_path = upload_path
+		if DirAccess.dir_exists_absolute(upload_path):
+			%ItemListFiles.on_target_path_changed(upload_path)
+
+
+func _ugc_unix_time(item: Dictionary, key: String) -> int:
+	if item.has(key):
+		return int(item[key])
+	return 0
+
+
+func _format_unix_time(unix_time: int) -> String:
+	if unix_time <= 0:
+		return "—"
+	return Time.get_datetime_string_from_unix_time(unix_time, true)
+
+
+func reset_fields() -> void:
+	var file_id: int = Steamworks.current_ugc_item["file_id"]
+	var title: String = Steamworks.current_ugc_item["title"]
+	var description: String = Steamworks.current_ugc_item["description"]
+
+	var visibility: int = Steamworks.current_ugc_item["visibility"]
+
+	var score: float = Steamworks.current_ugc_item["score"]
+	var votes_up: int = Steamworks.current_ugc_item["votes_up"]
+	var votes_down: int = Steamworks.current_ugc_item["votes_down"]
+
+	var preview_url: String = Steamworks.current_ugc_item["preview_url"]
+
+	var time_created: int = _ugc_unix_time(Steamworks.current_ugc_item, "time_created")
+	var time_updated: int = _ugc_unix_time(Steamworks.current_ugc_item, "time_updated")
+
+	var time_created_str: String = _format_unix_time(time_created)
+	var time_updated_str: String = _format_unix_time(time_updated)
+
+	var _tags_truncated: bool = Steamworks.current_ugc_item["tags_truncated"]
+	var tags: String = Steamworks.current_ugc_item["tags"]
 	var _tag_list = tags.split(",")
 
-	var _result:int = Steamworks.current_ugc_item["result"]
-	var _file_type:Steam.WorkshopFileType = Steamworks.current_ugc_item["file_type"]
-	var _creator_app_id:int = Steamworks.current_ugc_item["creator_app_id"]
-	var _consumer_app_id:int = Steamworks.current_ugc_item["consumer_app_id"]
-	var _steam_id_owner:int = Steamworks.current_ugc_item["steam_id_owner"]
-	var _time_added_to_user_list:int = Steamworks.current_ugc_item["time_added_to_user_list"]
-	var _banned:bool = Steamworks.current_ugc_item["banned"]
-	var _accepted_for_use:bool = Steamworks.current_ugc_item["accepted_for_use"]
-	var _handle_file:int = Steamworks.current_ugc_item["handle_file"]
-	var _handle_preview_file:int = Steamworks.current_ugc_item["handle_preview_file"]
-	var _file_name:String = Steamworks.current_ugc_item["file_name"]
-	var _file_size:int = Steamworks.current_ugc_item["file_size"]
-	var _preview_file_size:int = Steamworks.current_ugc_item["preview_file_size"]
-	var _url:String = Steamworks.current_ugc_item["url"]
-	var _num_children:int = Steamworks.current_ugc_item["num_children"]
-	var _total_files_size:int = Steamworks.current_ugc_item["total_files_size"]
-	
+	var _result: int = Steamworks.current_ugc_item["result"]
+	var _file_type: Steam.WorkshopFileType = Steamworks.current_ugc_item["file_type"]
+	var _creator_app_id: int = Steamworks.current_ugc_item["creator_app_id"]
+	var _consumer_app_id: int = Steamworks.current_ugc_item["consumer_app_id"]
+	var _steam_id_owner: int = Steamworks.current_ugc_item["steam_id_owner"]
+	var _time_added_to_user_list: int = Steamworks.current_ugc_item["time_added_to_user_list"]
+	var _banned: bool = Steamworks.current_ugc_item["banned"]
+	var _accepted_for_use: bool = Steamworks.current_ugc_item["accepted_for_use"]
+	var _handle_file: int = Steamworks.current_ugc_item["handle_file"]
+	var _handle_preview_file: int = Steamworks.current_ugc_item["handle_preview_file"]
+	var _file_name: String = Steamworks.current_ugc_item["file_name"]
+	var _file_size: int = Steamworks.current_ugc_item["file_size"]
+	var _preview_file_size: int = Steamworks.current_ugc_item["preview_file_size"]
+	var _url: String = Steamworks.current_ugc_item["url"]
+	var _num_children: int = Steamworks.current_ugc_item["num_children"]
+	var _total_files_size: int = Steamworks.current_ugc_item["total_files_size"]
+
 	%LabelFileIDValue.text = str(file_id)
 	var score_value = str(score) + " (+" + str(votes_up) + "/-" + str(votes_down) + ")"
 	%LabelScoreValue.text = score_value
@@ -51,32 +199,41 @@ func reset_fields():
 
 	%LineEditTitle.text = title
 	%OptionButtonVisibility.selected = %OptionButtonVisibility.get_item_index(visibility)
-	
+
 	%TextEditDescription.text = description
 	%RichTextDescription.text = description
-	
+
 	load_preview_from_url(preview_url)
 
-func load_preview_from_url(url:String) -> void:
+	if %HBoxTagList.has_method("configure"):
+		%HBoxTagList.configure()
+
+
+func load_preview_from_url(url: String) -> void:
 	if url == "":
 		return
 	WebImage.load_image_from_url(url, %SpritePreviewImage)
 
+
 func _on_button_revert_pressed() -> void:
 	AppLogger.info("Reverting UGC changes...")
+	var file_id := _get_file_id()
+	DraftStore.erase_draft(file_id)
 	reset_fields()
+
 
 func get_visiblity() -> Steam.RemoteStoragePublishedFileVisibility:
 	return %OptionButtonVisibility.get_item_id(%OptionButtonVisibility.selected)
 
+
 func _on_button_submit_pressed() -> void:
 	AppLogger.info("Submitting UGC changes...")
-	
-	var file_id:int = Steamworks.current_ugc_item["file_id"]
+
+	var file_id: int = Steamworks.current_ugc_item["file_id"]
 	var new_ugc_data = Steamworks.current_ugc_item.duplicate()
-	
+
 	new_ugc_data["title"] = %LineEditTitle.text
-	
+
 	if %CheckBoxDescriptionShouldUpdate.button_pressed:
 		AppLogger.info("Including description in upload...")
 		new_ugc_data["description"] = %RichTextDescription.text
@@ -85,51 +242,46 @@ func _on_button_submit_pressed() -> void:
 
 	new_ugc_data["visibility"] = get_visiblity()
 	new_ugc_data["tags"] = ",".join(%HBoxTagList.current_tags)
-	
+
 	if %ButtonSelectPreviewImage.preview_image_path != "":
 		new_ugc_data["preview_path"] = %ButtonSelectPreviewImage.preview_image_path
 	else:
 		new_ugc_data["preview_path"] = ""
-	
-	var change_notes:String = %LineEditChangeNotes.text
-	
+
+	var change_notes: String = %LineEditChangeNotes.text
+
 	if change_notes == "":
-		AppLogger.error("Can't upload, must include change notes!")
+		_show_blocking_error("Change notes are required before submitting.")
 		return
 
-	var upload_dir:String = ""
-	var base_dir:String = %ButtonBrowseFiles.upload_target_path
-	
+	var upload_dir: String = ""
+	var base_dir: String = %ButtonBrowseFiles.upload_target_path
+
 	if base_dir == "":
 		AppLogger.info("No file upload specified, ignoring...")
 	elif %CheckBoxExcludeFiles.button_pressed:
-		# Exclusion enabled!
 		AppLogger.info("File upload specified: " + base_dir)
-		#specified with exclusion, copying to , ignoring...")
 		var temp_dir = TempFolder.create_temp_folder()
-		
-		var export_data:Dictionary[String, PackedStringArray] = %ItemListFiles.export_data()
-		
+
+		var export_data: Dictionary[String, PackedStringArray] = %ItemListFiles.export_data()
+
 		if export_data.size() == 0:
-			AppLogger.error("Couldn't build file list for upload!")
-			AppLogger.error("CANCELLING upload!")
+			_show_blocking_error("Could not build the file list for upload.")
 			return
-		
+
 		var relative_paths = export_data["relative_paths"]
 		var absolute_paths = export_data["absolute_paths"]
 		var count = relative_paths.size()
-		
+
 		AppLogger.info("Copying " + str(count) + " files to: " + temp_dir)
-		
+
 		var success = TempFolder.copy_files_to_folder(temp_dir, absolute_paths, relative_paths)
 		if not success:
-			AppLogger.error("Failed to copy files to temp folder!")
-			AppLogger.error("CANCELLING upload!")
+			_show_blocking_error("Failed to copy files to the temporary upload folder.")
 			return
-		
+
 		upload_dir = temp_dir
 	else:
-		# Exclusion disabled!
 		AppLogger.info("File upload specified: " + base_dir)
 		AppLogger.info("Exclusion disabled, copying folder as-is...")
 		upload_dir = base_dir
@@ -137,6 +289,22 @@ func _on_button_submit_pressed() -> void:
 	new_ugc_data["upload_path"] = upload_dir
 
 	Steamworks.update_workshop_item(file_id, new_ugc_data, change_notes)
-	
-	# Back to main menu
+
+	DraftStore.erase_draft(file_id)
 	get_tree().change_scene_to_file("res://Scenes/Main.tscn")
+
+
+func _show_blocking_error(message: String) -> void:
+	AppLogger.error(message)
+	var dlg := AcceptDialog.new()
+	dlg.title = "Upload cancelled"
+	dlg.dialog_text = message
+	dlg.confirmed.connect(dlg.queue_free)
+	dlg.canceled.connect(dlg.queue_free)
+	dlg.close_requested.connect(dlg.queue_free)
+	var host := get_window()
+	if host:
+		host.add_child(dlg)
+	else:
+		add_child(dlg)
+	dlg.popup_centered()

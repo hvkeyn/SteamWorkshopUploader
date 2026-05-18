@@ -1,7 +1,7 @@
 class_name FolderPickerDialog
-extends AcceptDialog
+extends Window
 
-## Folder picker with pasteable path field (always shown in this dialog).
+## Folder picker with pasteable path (shown as a proper popup window).
 
 const PathUtils = preload("res://Scripts/path_input_utils.gd")
 
@@ -9,24 +9,49 @@ signal folder_selected(path: String)
 
 var _path_edit: LineEdit
 var _browse_dialog: FileDialog
+var _ui_built: bool = false
 
 
 func _init() -> void:
 	title = "Select folder to upload"
-	ok_button_text = "Select folder"
-	cancel_button_text = "Cancel"
-	min_size = Vector2i(560, 140)
+	size = Vector2i(640, 220)
+	min_size = Vector2i(480, 180)
+	unresizable = false
+	exclusive = true
+	close_requested.connect(_on_cancelled)
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	add_child(margin)
+
+func popup_over(host: Window, start_dir: String = "") -> void:
+	_ensure_ui()
+	if get_parent() != host:
+		if get_parent():
+			get_parent().remove_child(self)
+		host.add_child(self)
+	var dir := PathUtils.normalize_directory_path(start_dir)
+	if PathUtils.is_existing_directory(dir):
+		_path_edit.text = dir
+		_path_edit.caret_column = _path_edit.text.length()
+	popup_centered()
+	_path_edit.grab_focus()
+
+
+func _ensure_ui() -> void:
+	if _ui_built:
+		return
+	_ui_built = true
+
+	var root := MarginContainer.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_theme_constant_override("margin_left", 16)
+	root.add_theme_constant_override("margin_top", 12)
+	root.add_theme_constant_override("margin_right", 16)
+	root.add_theme_constant_override("margin_bottom", 12)
+	add_child(root)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	margin.add_child(vbox)
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 10)
+	root.add_child(vbox)
 
 	var hint := Label.new()
 	hint.text = "Paste a full folder path or browse:"
@@ -44,16 +69,20 @@ func _init() -> void:
 	browse_btn.pressed.connect(_open_browse_dialog)
 	vbox.add_child(browse_btn)
 
-	confirmed.connect(_on_confirmed)
-	canceled.connect(_on_cancelled)
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 12)
+	btn_row.alignment = BoxContainer.ALIGNMENT_END
+	vbox.add_child(btn_row)
 
+	var cancel_btn := Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.pressed.connect(_on_cancelled)
+	btn_row.add_child(cancel_btn)
 
-func open_picker(start_dir: String = "") -> void:
-	var dir := PathUtils.normalize_directory_path(start_dir)
-	if PathUtils.is_existing_directory(dir):
-		_path_edit.text = dir
-		_path_edit.caret_column = _path_edit.text.length()
-	popup_centered()
+	var ok_btn := Button.new()
+	ok_btn.text = "Select folder"
+	ok_btn.pressed.connect(_on_confirmed)
+	btn_row.add_child(ok_btn)
 
 
 func _navigate_to_typed_path(_text: String = "") -> void:
@@ -73,7 +102,7 @@ func _open_browse_dialog(start_dir: String = "") -> void:
 		_browse_dialog = FileDialog.new()
 		_browse_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
 		_browse_dialog.access = FileDialog.ACCESS_FILESYSTEM
-		_browse_dialog.use_native_dialog = false
+		_browse_dialog.use_native_dialog = UserPreferences.fetch().native_dialogs
 		_browse_dialog.dir_selected.connect(_on_browse_dir_selected)
 		add_child(_browse_dialog)
 
@@ -86,8 +115,7 @@ func _open_browse_dialog(start_dir: String = "") -> void:
 
 
 func _on_browse_dir_selected(path: String) -> void:
-	var dir := PathUtils.normalize_directory_path(path)
-	_path_edit.text = dir
+	_path_edit.text = PathUtils.normalize_directory_path(path)
 	_path_edit.grab_focus()
 
 

@@ -5,7 +5,6 @@ var _confirm: ConfirmationDialog
 
 func _ready() -> void:
 	disabled = true
-	pressed.connect(_on_pressed)
 	Steamworks.steamworks_ugc_items_retrieved.connect(_update_state)
 	Steamworks.steam_context_changed.connect(_update_state)
 	if has_node("%DropdownWorkshopItem"):

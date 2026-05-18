@@ -369,9 +369,19 @@ func query_published_items(page:int = 1):
 	
 	Steam.sendQueryUGCRequest(_ugc_request_handle)
 
+
+func _normalize_ugc_query_item(item: Dictionary) -> Dictionary:
+	item["file_id"] = int(item.get("file_id", 0))
+	for key in ["time_created", "time_updated", "time_added_to_user_list"]:
+		if item.has(key):
+			item[key] = int(item[key])
+	return item
+
+
 func fetch_queried_ugc_items(count: int):
 	for i in range(count):
-		var item = Steam.getQueryUGCResult(_ugc_request_handle, i)
+		var item: Dictionary = Steam.getQueryUGCResult(_ugc_request_handle, i)
+		item = _normalize_ugc_query_item(item)
 		ugc_items.set(item["file_id"], item)
 		
 		# Seems to always be 0 for Binding of Isaac.
@@ -380,6 +390,29 @@ func fetch_queried_ugc_items(count: int):
 		
 		var preview_url = Steam.getQueryUGCPreviewURL(_ugc_request_handle, i)
 		item["preview_url"] = preview_url
+		item["tags"] = _merge_ugc_tags(item, _ugc_request_handle, i)
+
+
+func _merge_ugc_tags(item: Dictionary, query_handle: int, index: int) -> String:
+	var tag_set: Dictionary = {}
+	for part in str(item.get("tags", "")).split(","):
+		var tag := str(part).strip_edges()
+		if not tag.is_empty():
+			tag_set[tag] = true
+
+	var num_kv: int = int(Steam.getQueryUGCNumKeyValueTags(query_handle, index))
+	for j in range(num_kv):
+		var kv: Dictionary = Steam.getQueryUGCKeyValueTag(query_handle, index, j)
+		if not kv.get("success", false):
+			continue
+		for key_name in ["value", "key"]:
+			var entry := str(kv.get(key_name, "")).strip_edges()
+			if not entry.is_empty():
+				tag_set[entry] = true
+
+	if tag_set.is_empty():
+		return str(item.get("tags", ""))
+	return ",".join(tag_set.keys())
 
 #
 # Signal Callbacks
