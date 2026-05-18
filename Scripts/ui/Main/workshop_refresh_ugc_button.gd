@@ -10,5 +10,5 @@ func on_steamworks_init():
 		_on_button_pressed()
 
 func _on_button_pressed() -> void:
-	Logger.info("Refreshing workshop items...")
+	AppLogger.info("Refreshing workshop items...")
 	Steamworks.query_published_items()

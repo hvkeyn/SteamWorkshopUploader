@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=4 uid="uid://yeuwi5ir2uqa"]
+[gd_scene load_steps=34 format=4 uid="uid://yeuwi5ir2uqa"]
 
 [ext_resource type="PackedScene" uid="uid://c8r01vv0beco5" path="res://scenes/ui/Toolbar.tscn" id="1_e13vq"]
 [ext_resource type="Theme" uid="uid://cyaprjck1qyde" path="res://resources/theme.tres" id="2_d2hyp"]
@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://ddpqerkmk2wt8" path="res://scripts/ui/Edit/exclude_files_checkbox.gd" id="11_0vrcp"]
 [ext_resource type="Script" uid="uid://24ogyy1w434s" path="res://scripts/ui/Edit/use_steamignore_checkbox.gd" id="12_muy6i"]
 [ext_resource type="Script" uid="uid://cjy0rbmhsrfql" path="res://scripts/ui/Edit/hide_excluded_checkbox.gd" id="13_muy6i"]
+[ext_resource type="Script" path="res://Scripts/ui/Edit/remove_files_button.gd" id="14_remove"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gi581"]
 
@@ -1667,19 +1668,23 @@ show_back_button = true
 
 [node name="OuterMargin" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="Panel" type="Panel" parent="VBoxContainer/OuterMargin"]
+[node name="Panel" type="PanelContainer" parent="VBoxContainer/OuterMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme = ExtResource("2_d2hyp")
 
 [node name="Margin" type="MarginContainer" parent="VBoxContainer/OuterMargin/Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
@@ -1687,6 +1692,7 @@ theme_override_constants/margin_bottom = 16
 
 [node name="VBox" type="VBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
@@ -1699,6 +1705,7 @@ horizontal_alignment = 1
 
 [node name="TabContainer" type="TabContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 16
 theme_override_styles/panel = SubResource("StyleBoxEmpty_gi581")
@@ -1931,28 +1938,34 @@ button_pressed = true
 text = "Should Update Description?"
 script = ExtResource("5_lml5s")
 
-[node name="Files" type="Panel" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer"]
+[node name="Files" type="PanelContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_kpcpn")
 metadata/_tab_index = 2
 
 [node name="Margin" type="MarginContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
 
 [node name="ItemListFiles" type="Tree" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 3
 column_titles_visible = true
@@ -1960,14 +1973,18 @@ script = ExtResource("4_v2ixw")
 icon_include = ExtResource("9_muy6i")
 icon_exclude = ExtResource("10_muy6i")
 
-[node name="HBox" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox"]
+[node name="ControlsPanel" type="VBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 316
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 6
 
-[node name="HBox1" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox"]
+[node name="HBox1" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
 
-[node name="CheckBoxExcludeFiles" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1"]
+[node name="CheckBoxExcludeFiles" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "If enabled, allow excluding files from the Workshop upload.
@@ -1978,7 +1995,7 @@ text = "Enable file exclusion"
 icon_alignment = 2
 script = ExtResource("11_0vrcp")
 
-[node name="CheckBoxUseSteamIgnore" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1"]
+[node name="CheckBoxUseSteamIgnore" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "If enabled, globs specified in .steamignore files will automatically be excluded by default."
@@ -1986,7 +2003,7 @@ disabled = true
 text = "Use .steamignore"
 script = ExtResource("12_muy6i")
 
-[node name="CheckBoxHideExcluded" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1"]
+[node name="CheckBoxHideExcluded" type="CheckBox" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "If enabled, hide files and directories from the list once they have been excluded.
@@ -1995,14 +2012,27 @@ disabled = true
 text = "Hide excludes files"
 script = ExtResource("13_muy6i")
 
-[node name="HBox2" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox"]
+[node name="HBox2" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
-[node name="ButtonBrowseFiles" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2"]
+[node name="ButtonBrowseFiles" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-text = "Select Directory to Upload"
+size_flags_horizontal = 3
+text = "Select folder to upload…"
 script = ExtResource("10_5c5vg")
+
+[node name="ButtonRemoveFromList" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 36)
+disabled = true
+tooltip_text = "Remove selected file or folder from the upload list (Delete key)"
+text = "Remove from list"
+script = ExtResource("14_remove")
 
 [node name="Logs" type="Panel" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer"]
 visible = false
@@ -2026,6 +2056,8 @@ script = ExtResource("5_gi581")
 
 [node name="HBoxContainerSubmit" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="LineEditChangeNotes" type="LineEdit" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/HBoxContainerSubmit"]
 unique_name_in_owner = true
@@ -2035,10 +2067,12 @@ placeholder_text = "Change notes..."
 
 [node name="ButtonRevert" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/HBoxContainerSubmit"]
 layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
 text = "Revert Changes"
 
 [node name="ButtonSubmit" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/HBoxContainerSubmit"]
 layout_mode = 2
+custom_minimum_size = Vector2(120, 36)
 text = "Submit Changes"
 
 [connection signal="pressed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Metadata/Margin/HBoxContainer/VBoxContainer/ButtonSelectPreviewImage" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Metadata/Margin/HBoxContainer/VBoxContainer/ButtonSelectPreviewImage" method="_on_pressed"]
@@ -2046,16 +2080,16 @@ text = "Submit Changes"
 [connection signal="text_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/TextEditDescription" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/TextEditDescription" method="_on_text_changed"]
 [connection signal="meta_clicked" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/RichTextDescription" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/RichTextDescription" method="_on_meta_clicked"]
 [connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/CheckBoxDescriptionShouldUpdate" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Description/MarginContainer/GridContainer/CheckBoxDescriptionShouldUpdate" method="_on_toggled"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxExcludeFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_is_exclude_enabled"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxExcludeFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxExcludeFiles" method="_on_toggled"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxUseSteamIgnore" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_is_steamignore_enabled"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxUseSteamIgnore" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxUseSteamIgnore" method="_on_toggled"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxHideExcluded" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_should_hide_excluded"]
-[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxHideExcluded" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxHideExcluded" method="_on_toggled"]
-[connection signal="pressed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" method="_on_pressed"]
-[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_target_path_changed"]
-[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxExcludeFiles" method="_on_target_path_changed"]
-[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxUseSteamIgnore" method="_on_target_path_changed"]
-[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox1/CheckBoxHideExcluded" method="_on_target_path_changed"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxExcludeFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_is_exclude_enabled"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxExcludeFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxExcludeFiles" method="_on_toggled"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxUseSteamIgnore" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_is_steamignore_enabled"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxUseSteamIgnore" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxUseSteamIgnore" method="_on_toggled"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxHideExcluded" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_change_should_hide_excluded"]
+[connection signal="toggled" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxHideExcluded" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxHideExcluded" method="_on_toggled"]
+[connection signal="pressed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" method="_on_pressed"]
+[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ItemListFiles" method="on_target_path_changed"]
+[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxExcludeFiles" method="_on_target_path_changed"]
+[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxUseSteamIgnore" method="_on_target_path_changed"]
+[connection signal="target_path_changed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox2/ButtonBrowseFiles" to="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/ControlsPanel/HBox1/CheckBoxHideExcluded" method="_on_target_path_changed"]
 [connection signal="pressed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/HBoxContainerSubmit/ButtonRevert" to="." method="_on_button_revert_pressed"]
 [connection signal="pressed" from="VBoxContainer/OuterMargin/Panel/Margin/VBox/HBoxContainerSubmit/ButtonSubmit" to="." method="_on_button_submit_pressed"]

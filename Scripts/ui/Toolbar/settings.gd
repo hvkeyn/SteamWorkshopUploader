@@ -31,4 +31,4 @@ func _on_index_pressed(index: int) -> void:
 			print("Clearing user preferences...")
 			UserPrefHandler.clear_user_prefs()
 		_:
-			Logger.error("Unknown item pressed: Settings#" + str(index))
+			AppLogger.error("Unknown item pressed: Settings#" + str(index))

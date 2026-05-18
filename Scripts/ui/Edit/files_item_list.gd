@@ -16,6 +16,9 @@ var dir_children: Dictionary[String, PackedStringArray] = {}
 # Associates a TreeItem node ID with a path.
 var paths_by_tree_item: Dictionary[int, Dictionary] = {}
 
+# Paths explicitly removed from the upload list (session-only).
+var removed_paths: Dictionary[String, bool] = {}
+
 ## Initialize the file item list.
 func _ready() -> void:
 	# Basic layout
@@ -35,6 +38,43 @@ func _ready() -> void:
 	UserPreferences.fetch().change_include_hidden_files.connect(on_change_should_include_hidden_files)
 	
 	render_blank_list()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_DELETE:
+			remove_selected_from_list()
+			get_viewport().set_input_as_handled()
+
+
+func get_selected_relative_path() -> String:
+	var item := get_next_selected(null)
+	if item == null:
+		return ""
+	var data: Variant = paths_by_tree_item.get(item.get_instance_id())
+	if data is Dictionary:
+		return str(data.get("relative_path", ""))
+	return ""
+
+
+func remove_selected_from_list() -> void:
+	var relative_path := get_selected_relative_path()
+	if relative_path.is_empty():
+		AppLogger.error("Select a file or folder in the list to remove.")
+		return
+	_mark_removed(relative_path, true)
+	AppLogger.info("Removed from upload list: " + relative_path)
+	var root_path := get_target_path()
+	if root_path != "":
+		render_include_list(root_path)
+
+
+func _mark_removed(relative_path: String, recursive: bool) -> void:
+	removed_paths[relative_path] = true
+	set_include_state(relative_path, false, false)
+	if recursive and dir_children.has(relative_path):
+		for child_path in dir_children[relative_path]:
+			_mark_removed(child_path, true)
 
 func get_target_path() -> String:
 	var result = %ButtonBrowseFiles.upload_target_path
@@ -60,10 +100,10 @@ func should_include_hidden_files() -> bool:
 
 ## Called when is_exclude_enabled changes.
 func on_change_is_exclude_enabled(_new_value:bool) -> void:
-	Logger.info("File exclusion toggled.")
+	AppLogger.info("File exclusion toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# Recursively enable inclusion on the root path, then update button statuses.
@@ -74,10 +114,10 @@ func on_change_is_exclude_enabled(_new_value:bool) -> void:
 
 ## Called when is_steamignore_enabled changes.
 func on_change_is_steamignore_enabled(_new_value:bool) -> void:
-	Logger.info("steamignore toggled.")
+	AppLogger.info("steamignore toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We basically have to re-compute the inclusion list.
@@ -85,10 +125,10 @@ func on_change_is_steamignore_enabled(_new_value:bool) -> void:
 
 ## Called when should_hide_excluded changes.
 func on_change_should_hide_excluded(_new_value:bool) -> void:
-	Logger.info("Hide exclusion toggled.")
+	AppLogger.info("Hide exclusion toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We have to re-add the excluded items,
@@ -97,10 +137,10 @@ func on_change_should_hide_excluded(_new_value:bool) -> void:
 
 ## Called when should_include_hidden_files changes.
 func on_change_should_include_hidden_files(_new_value:bool) -> void:
-	Logger.info("Include hidden toggled.")
+	AppLogger.info("Include hidden toggled.")
 	
 	if include_list.size() == 0:
-		Logger.info("  ...but file list isn't rendered yet.")
+		AppLogger.info("  ...but file list isn't rendered yet.")
 		return
 	
 	# We basically have to re-compute the inclusion list.
@@ -108,7 +148,7 @@ func on_change_should_include_hidden_files(_new_value:bool) -> void:
 
 ## Called when target path changes.
 func on_target_path_changed(_path:String) -> void:
-	Logger.info("Target path changed.")
+	AppLogger.info("Target path changed.")
 	self.call_deferred("reset_include_list")
 
 ## Called when any include/exclude button is pressed.
@@ -116,7 +156,7 @@ func on_button_pressed(item: TreeItem, _column: int, _button_id: int, _mouse_but
 	var data = paths_by_tree_item[item.get_instance_id()]
 	var relative_path = data["relative_path"]
 	var include = not include_list[relative_path]
-	Logger.info("Pressed button for path: " + data["relative_path"] + " = " + str(include))
+	AppLogger.info("Pressed button for path: " + data["relative_path"] + " = " + str(include))
 
 	# set_include_state assigns values of include_list but recursively.
 	set_include_state(relative_path, include)
@@ -131,16 +171,17 @@ func render_blank_list() -> void:
 	root.set_selectable(0, false)
 	root.set_selectable(1, false)
 	root.set_selectable(2, false)
-	root.set_text(0, "Click 'Browse' to select a folder to upload.")
+	root.set_text(0, "Click «Select folder to upload…» to choose a mod folder.")
 
 ## Empties the include list, and repopulates the list of files.
 func reset_include_list() -> void:
-	Logger.info("Hard-resetting file include list...")
+	AppLogger.info("Hard-resetting file include list...")
 	var root_path = get_target_path()
 
 	# Remove all entries.
 	include_list.clear()
 	dir_children.clear()
+	removed_paths.clear()
 
 	build_steamignore(root_path)
 	populate_include_list(root_path)
@@ -199,6 +240,9 @@ func render_include_list(root_path:String, relative_subdir:String = "", root_nod
 		var full_path := (root_path + "/" + subdir).simplify_path()
 		var relative_path := (relative_subdir + subdir).simplify_path()
 
+		if removed_paths.has(relative_path):
+			continue
+
 		var include := include_list[relative_path]
 
 		if include or (not should_hide_excluded()):
@@ -209,6 +253,9 @@ func render_include_list(root_path:String, relative_subdir:String = "", root_nod
 	for file in dir.get_files():
 		var full_path := (root_path + "/" + file).simplify_path()
 		var relative_path := (relative_subdir + file).simplify_path()
+
+		if removed_paths.has(relative_path):
+			continue
 
 		var include := include_list[relative_path]
 
@@ -289,7 +336,7 @@ func refresh_node_buttons(root_node:TreeItem = null) -> void:
 
 func set_include_state(relative_path:String, state:bool, recursive:bool = true) -> void:
 	if relative_path == null:
-		Logger.error("Tried to set include state of invalid path!")
+		AppLogger.error("Tried to set include state of invalid path!")
 		return
 	
 	include_list[relative_path] = state
@@ -310,6 +357,8 @@ func export_data() -> Dictionary[String, PackedStringArray]:
 	
 	for key in include_list:
 		var relative_path = key
+		if removed_paths.has(relative_path):
+			continue
 		var include = include_list[relative_path]
 		var absolute_path = (root_path + "/" + relative_path).simplify_path()
 		var is_directory = DirAccess.dir_exists_absolute(absolute_path)
@@ -318,7 +367,7 @@ func export_data() -> Dictionary[String, PackedStringArray]:
 			result["relative_paths"].append(relative_path)
 	
 	if result["absolute_paths"].size() != result["relative_paths"].size():
-		Logger.error("Export list not generated correctly!")
+		AppLogger.error("Export list not generated correctly!")
 		return {}
 	
 	return result

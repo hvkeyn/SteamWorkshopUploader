@@ -10,6 +10,8 @@ static func fetch():
 
 @export var last_app_id: int = -1:
 	set(value):
+		if last_app_id == value:
+			return
 		last_app_id = value
 		save()
 

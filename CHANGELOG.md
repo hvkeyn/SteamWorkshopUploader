@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-05-19 (fork: hvkeyn)
+
+### Added
+- Full Steam library picker with search (all owned games from local Steam config).
+- App name database from SteamCMD-AppID-List CSV (~165k entries) with Store API fallback.
+- `start.ps1` launcher for Godot 4.6.2 or exported build.
+- Folder picker dialog with pasteable full path and embedded browse.
+- Remove files/folders from upload list (button + Delete key).
+- Delete Workshop UGC items from the main screen.
+- Responsive main window layout (PanelContainer, min window size 900×600).
+
+### Changed
+- Upgraded project target to **Godot 4.6.2**.
+- Renamed autoload `Logger` → `AppLogger` (Godot 4.6 built-in conflict).
+- Replaced hardcoded game dropdown with scrollable library list.
+
+### Fixed
+- `MasterList.get_name()` shadowing `Object.get_name()` breaking library scan.
+- Log panel and controls not stretching on window resize.
+- Workshop item dropdown crash when zero items returned.
+- Per-app Steam re-initialization when switching games.
+
 ## [1.0.1] - 2025-05-18
 
 ### Added

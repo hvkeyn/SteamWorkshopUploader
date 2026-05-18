@@ -9,7 +9,7 @@ func _ready() -> void:
 	user_preferences = UserPreferences.load_or_create()
 
 	user_preferences_loaded.emit()
-	Logger.info("User preferences loaded.")
+	AppLogger.info("User preferences loaded.")
 
 func is_loaded() -> bool:
 	return user_preferences != null
@@ -26,4 +26,4 @@ func clear_user_prefs() -> void:
 	user_preferences = UserPreferences.new()
 	user_preferences.save()
 	user_preferences_loaded.emit()
-	Logger.info("User preferences cleared.")
+	AppLogger.info("User preferences cleared.")

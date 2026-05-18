@@ -8,18 +8,31 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Steam Workshop Uploader"
 config/version="1.0.0"
 run/main_scene="uid://dkql7x3bwjqlb"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://bukws6e6mjqnr"
+
+[display]
+
+window/size/viewport_width=1100
+window/size/viewport_height=720
+window/size/min_width=900
+window/size/min_height=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [autoload]
 
 Steamworks="*res://scenes/globals/Steamworks.tscn"
-Logger="*res://scenes/globals/Logger.tscn"
+AppLogger="*res://scenes/globals/Logger.tscn"
 UserPrefHandler="*res://scenes/globals/UserPrefHandler.tscn"
 Tests="*res://scenes/globals/Tests.tscn"
 

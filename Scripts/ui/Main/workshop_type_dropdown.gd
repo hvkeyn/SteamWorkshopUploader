@@ -9,4 +9,4 @@ func on_steamworks_init():
 func _on_item_selected(index: int):
 	var type_id = get_item_id(index)
 	var type_name = get_item_text(index)
-	Logger.info("Steam Workshop Item type selected: " + type_name + " (" + str(type_id) + ")")
+	AppLogger.info("Steam Workshop Item type selected: " + type_name + " (" + str(type_id) + ")")
