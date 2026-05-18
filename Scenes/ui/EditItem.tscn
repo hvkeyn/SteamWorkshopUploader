@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=4 uid="uid://yeuwi5ir2uqa"]
+[gd_scene load_steps=34 format=4 uid="uid://yeuwi5ir2uqa"]
 
 [ext_resource type="PackedScene" uid="uid://c8r01vv0beco5" path="res://scenes/ui/Toolbar.tscn" id="1_e13vq"]
 [ext_resource type="Theme" uid="uid://cyaprjck1qyde" path="res://resources/theme.tres" id="2_d2hyp"]
@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://ddpqerkmk2wt8" path="res://scripts/ui/Edit/exclude_files_checkbox.gd" id="11_0vrcp"]
 [ext_resource type="Script" uid="uid://24ogyy1w434s" path="res://scripts/ui/Edit/use_steamignore_checkbox.gd" id="12_muy6i"]
 [ext_resource type="Script" uid="uid://cjy0rbmhsrfql" path="res://scripts/ui/Edit/hide_excluded_checkbox.gd" id="13_muy6i"]
+[ext_resource type="Script" path="res://Scripts/ui/Edit/remove_files_button.gd" id="14_remove"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gi581"]
 
@@ -1997,12 +1998,21 @@ script = ExtResource("13_muy6i")
 
 [node name="HBox2" type="HBoxContainer" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ButtonBrowseFiles" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Select Directory to Upload"
+size_flags_horizontal = 3
+text = "Select folder to upload…"
 script = ExtResource("10_5c5vg")
+
+[node name="ButtonRemoveFromList" type="Button" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer/Files/Margin/VBox/HBox/HBox2"]
+layout_mode = 2
+disabled = true
+tooltip_text = "Remove selected file or folder from the upload list (Delete key)"
+text = "Remove from list"
+script = ExtResource("14_remove")
 
 [node name="Logs" type="Panel" parent="VBoxContainer/OuterMargin/Panel/Margin/VBox/TabContainer"]
 visible = false

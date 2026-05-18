@@ -24,7 +24,7 @@ func on_ugc_items_retrieved() -> void:
 		disabled = true
 
 	var item_id := get_selected_item_id()
-	%ButtonEditUGC.disabled = item_id <= 0
+	_set_action_buttons_enabled(item_id > 0)
 
 
 func process_item(item: Dictionary) -> void:
@@ -70,7 +70,7 @@ func _on_item_selected(index: int) -> void:
 	AppLogger.info("Steam Workshop Item selected: " + item_name)
 
 	var item_id := get_selected_item_id()
-	%ButtonEditUGC.disabled = item_id <= 0
+	_set_action_buttons_enabled(item_id > 0)
 
 
 func get_selected_item_id() -> int:
@@ -79,3 +79,10 @@ func get_selected_item_id() -> int:
 	if selected < 0 or selected >= id_mapping.size():
 		return -1
 	return id_mapping[selected]
+
+
+func _set_action_buttons_enabled(enabled: bool) -> void:
+	if has_node("%ButtonEditUGC"):
+		%ButtonEditUGC.disabled = not enabled
+	if has_node("%ButtonDeleteUGC"):
+		%ButtonDeleteUGC.disabled = not enabled

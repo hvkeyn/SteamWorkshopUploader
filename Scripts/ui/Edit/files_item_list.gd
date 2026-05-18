@@ -16,6 +16,9 @@ var dir_children: Dictionary[String, PackedStringArray] = {}
 # Associates a TreeItem node ID with a path.
 var paths_by_tree_item: Dictionary[int, Dictionary] = {}
 
+# Paths explicitly removed from the upload list (session-only).
+var removed_paths: Dictionary[String, bool] = {}
+
 ## Initialize the file item list.
 func _ready() -> void:
 	# Basic layout
@@ -35,6 +38,43 @@ func _ready() -> void:
 	UserPreferences.fetch().change_include_hidden_files.connect(on_change_should_include_hidden_files)
 	
 	render_blank_list()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_DELETE:
+			remove_selected_from_list()
+			get_viewport().set_input_as_handled()
+
+
+func get_selected_relative_path() -> String:
+	var item := get_next_selected(null)
+	if item == null:
+		return ""
+	var data: Variant = paths_by_tree_item.get(item.get_instance_id())
+	if data is Dictionary:
+		return str(data.get("relative_path", ""))
+	return ""
+
+
+func remove_selected_from_list() -> void:
+	var relative_path := get_selected_relative_path()
+	if relative_path.is_empty():
+		AppLogger.error("Select a file or folder in the list to remove.")
+		return
+	_mark_removed(relative_path, true)
+	AppLogger.info("Removed from upload list: " + relative_path)
+	var root_path := get_target_path()
+	if root_path != "":
+		render_include_list(root_path)
+
+
+func _mark_removed(relative_path: String, recursive: bool) -> void:
+	removed_paths[relative_path] = true
+	set_include_state(relative_path, false, false)
+	if recursive and dir_children.has(relative_path):
+		for child_path in dir_children[relative_path]:
+			_mark_removed(child_path, true)
 
 func get_target_path() -> String:
 	var result = %ButtonBrowseFiles.upload_target_path
@@ -131,7 +171,7 @@ func render_blank_list() -> void:
 	root.set_selectable(0, false)
 	root.set_selectable(1, false)
 	root.set_selectable(2, false)
-	root.set_text(0, "Click 'Browse' to select a folder to upload.")
+	root.set_text(0, "Click «Select folder to upload…» to choose a mod folder.")
 
 ## Empties the include list, and repopulates the list of files.
 func reset_include_list() -> void:
@@ -141,6 +181,7 @@ func reset_include_list() -> void:
 	# Remove all entries.
 	include_list.clear()
 	dir_children.clear()
+	removed_paths.clear()
 
 	build_steamignore(root_path)
 	populate_include_list(root_path)
@@ -199,6 +240,9 @@ func render_include_list(root_path:String, relative_subdir:String = "", root_nod
 		var full_path := (root_path + "/" + subdir).simplify_path()
 		var relative_path := (relative_subdir + subdir).simplify_path()
 
+		if removed_paths.has(relative_path):
+			continue
+
 		var include := include_list[relative_path]
 
 		if include or (not should_hide_excluded()):
@@ -209,6 +253,9 @@ func render_include_list(root_path:String, relative_subdir:String = "", root_nod
 	for file in dir.get_files():
 		var full_path := (root_path + "/" + file).simplify_path()
 		var relative_path := (relative_subdir + file).simplify_path()
+
+		if removed_paths.has(relative_path):
+			continue
 
 		var include := include_list[relative_path]
 
@@ -310,6 +357,8 @@ func export_data() -> Dictionary[String, PackedStringArray]:
 	
 	for key in include_list:
 		var relative_path = key
+		if removed_paths.has(relative_path):
+			continue
 		var include = include_list[relative_path]
 		var absolute_path = (root_path + "/" + relative_path).simplify_path()
 		var is_directory = DirAccess.dir_exists_absolute(absolute_path)

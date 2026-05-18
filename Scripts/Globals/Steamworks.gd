@@ -305,6 +305,17 @@ func open_tos_url() -> void:
 func create_workshop_item(type:Steam.WorkshopFileType):
 	Steam.createItem(Steam.current_app_id, type)
 
+
+func delete_workshop_item(file_id: int) -> void:
+	if not is_initialized:
+		AppLogger.error("Could not delete workshop item, Steam not initialized!")
+		return
+	if file_id <= 0:
+		AppLogger.error("Invalid workshop item id.")
+		return
+	AppLogger.info("Deleting workshop item " + str(file_id) + "…")
+	Steam.deleteItem(file_id)
+
 var _ugc_update_handle:int = -1
 
 func update_workshop_item(file_id:int, new_params:Dictionary, change_notes:String):
@@ -394,6 +405,13 @@ func on_item_updated(result: int, accept_tos:bool):
 	
 func on_item_deleted(result:int, file_id: int):
 	AppLogger.info("[STEAM] Item deleted: " + str(file_id) + " (result: " + SteamResult.stringify(result) + ")")
+	if result == Steam.RESULT_OK or result == Steam.RESULT_ITEM_DELETED:
+		ugc_items.erase(file_id)
+		if int(current_ugc_item.get("file_id", -1)) == file_id:
+			current_ugc_item = {}
+		steamworks_ugc_items_retrieved.emit()
+	else:
+		AppLogger.error("Failed to delete workshop item " + str(file_id))
 	emit_signal("item_deleted", result, file_id)
 	
 func on_item_downloaded(result:int, file_id: int, _app_id:int):

@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://dkql7x3bwjqlb"]
+[gd_scene load_steps=16 format=3 uid="uid://dkql7x3bwjqlb"]
 
 [ext_resource type="Theme" uid="uid://cyaprjck1qyde" path="res://resources/theme.tres" id="1_r150o"]
 [ext_resource type="PackedScene" uid="uid://c8r01vv0beco5" path="res://scenes/ui/Toolbar.tscn" id="2_erwvk"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://dtpa0fdvsqrkq" path="res://scripts/ui/Main/workshop_item_dropdown.gd" id="13_frkhe"]
 [ext_resource type="Script" uid="uid://di7r3idru8g7v" path="res://scripts/ui/Main/log_display.gd" id="15_h1m7h"]
 [ext_resource type="Script" uid="uid://dhwvw4n1db1kn" path="res://scripts/ui/Main/edit_ugc_button.gd" id="16_2w5on"]
+[ext_resource type="Script" path="res://Scripts/ui/Main/delete_ugc_button.gd" id="17_delugc"]
 
 [sub_resource type="Theme" id="Theme_r150o"]
 
@@ -38,28 +39,36 @@ layout_mode = 2
 
 [node name="OuterMargin" type="MarginContainer" parent="VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = ExtResource("1_r150o")
+theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="MainPanel" type="Panel" parent="VBox/OuterMargin"]
+[node name="MainPanel" type="PanelContainer" parent="VBox/OuterMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = ExtResource("1_r150o")
 
 [node name="MainPanelMargin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme = ExtResource("1_r150o")
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = ExtResource("1_r150o")
+theme_override_constants/separation = 10
 
 [node name="Header" type="RichTextLabel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox"]
 layout_mode = 2
@@ -96,13 +105,15 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 3.0
+theme_override_constants/separation = 16
 
-[node name="Panel1" type="Panel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox"]
+[node name="Panel1" type="PanelContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox"]
 clip_contents = true
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 1.15
 theme = ExtResource("1_r150o")
 
 [node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1"]
@@ -168,30 +179,43 @@ script = ExtResource("3_rgh2o")
 [node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+theme_override_constants/separation = 12
 
-[node name="Panel" type="Panel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox"]
+[node name="Panel" type="PanelContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 0.45
 theme = ExtResource("1_r150o")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel"]
+[node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel"]
 layout_mode = 2
-offset_left = 116.5
-offset_top = 3.0
-offset_right = 409.5
-offset_bottom = 100.0
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
-[node name="Label" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox"]
+[node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Create User-Generated Content (UGC)"
 horizontal_alignment = 1
 
-[node name="Separator" type="HSeparator" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox"]
+[node name="Separator" type="HSeparator" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="DropdownWorkshopType" type="OptionButton" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox"]
+[node name="DropdownWorkshopType" type="OptionButton" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -237,44 +261,59 @@ popup/item_16/text = "Clip"
 popup/item_16/id = 16
 script = ExtResource("10_4kpch")
 
-[node name="ButtonWorkshopCreate" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox"]
+[node name="ButtonWorkshopCreate" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(240, 0)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+size_flags_horizontal = 3
+size_flags_vertical = 8
 focus_mode = 0
 theme = ExtResource("1_r150o")
 text = "Create UGC Item"
 script = ExtResource("10_bmxlf")
 
-[node name="Panel2" type="Panel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox"]
+[node name="Panel2" type="PanelContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 0.55
+theme = ExtResource("1_r150o")
 
-[node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -146.5
-offset_top = -48.5
-offset_right = 146.5
-offset_bottom = 48.5
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ButtonRefreshUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox"]
+[node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="LabelManage" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Manage Workshop items"
+horizontal_alignment = 1
+
+[node name="ButtonRefreshUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 36)
 disabled = true
 text = "Refresh Workshop List"
 script = ExtResource("13_1p5hy")
 
-[node name="DropdownWorkshopItem" type="OptionButton" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox"]
+[node name="DropdownWorkshopItem" type="OptionButton" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 36)
+clip_text = true
 disabled = true
 selected = 0
 item_count = 1
@@ -282,12 +321,24 @@ popup/item_0/text = "Empty"
 popup/item_0/id = 0
 script = ExtResource("13_frkhe")
 
-[node name="ButtonEditUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox"]
+[node name="ButtonEditUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
 disabled = true
 text = "Edit UGC Item"
 script = ExtResource("16_2w5on")
+
+[node name="ButtonDeleteUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
+disabled = true
+tooltip_text = "Permanently delete the selected Workshop item from Steam"
+text = "Delete UGC Item"
+script = ExtResource("17_delugc")
 
 [node name="LogSeparator" type="HSeparator" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox"]
 layout_mode = 2
@@ -304,8 +355,8 @@ text = "Log:"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.25
-custom_minimum_size = Vector2(0, 180)
+size_flags_stretch_ratio = 0.9
+custom_minimum_size = Vector2(0, 140)
 editable = false
 wrap_mode = 1
 script = ExtResource("15_h1m7h")
@@ -314,8 +365,9 @@ script = ExtResource("15_h1m7h")
 [connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" method="_on_item_selected"]
 [connection signal="item_activated" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/SteamAppList" method="_on_item_activated"]
 [connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/ButtonSteamInitialize" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox/ButtonSteamInitialize" method="_on_pressed"]
-[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/DropdownWorkshopType" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/DropdownWorkshopType" method="_on_item_selected"]
-[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/ButtonWorkshopCreate" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/VBox/ButtonWorkshopCreate" method="_on_button_pressed"]
-[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/ButtonRefreshUGC" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/ButtonRefreshUGC" method="_on_button_pressed"]
-[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/DropdownWorkshopItem" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/DropdownWorkshopItem" method="_on_item_selected"]
-[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/ButtonEditUGC" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/VBox/ButtonEditUGC" method="_on_pressed"]
+[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox/DropdownWorkshopType" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox/DropdownWorkshopType" method="_on_item_selected"]
+[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox/ButtonWorkshopCreate" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel/Margin/VBox/ButtonWorkshopCreate" method="_on_button_pressed"]
+[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonRefreshUGC" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonRefreshUGC" method="_on_button_pressed"]
+[connection signal="item_selected" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/DropdownWorkshopItem" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/DropdownWorkshopItem" method="_on_item_selected"]
+[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonEditUGC" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonEditUGC" method="_on_pressed"]
+[connection signal="pressed" from="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonDeleteUGC" to="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox/ButtonDeleteUGC" method="_on_pressed"]
