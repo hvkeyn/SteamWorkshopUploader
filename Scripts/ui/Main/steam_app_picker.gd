@@ -236,6 +236,7 @@ func _apply_app_selection(app_id: int) -> void:
 		Steamworks.shutdown_steam()
 
 	Steamworks.app_id = app_id
+	Steamworks.current_ugc_item = {}
 
 	if UserPreferences.fetch().auto_init:
 		Steamworks.ensure_initialized_for_app(app_id)

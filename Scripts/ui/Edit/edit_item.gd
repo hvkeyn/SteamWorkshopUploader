@@ -79,6 +79,7 @@ func _save_draft() -> void:
 	if file_id <= 0:
 		return
 	var payload := {
+		"app_id": Steamworks.app_id,
 		"title": %LineEditTitle.text,
 		"description": %TextEditDescription.text,
 		"visibility": %OptionButtonVisibility.get_item_id(%OptionButtonVisibility.selected),
