@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Steam Workshop Uploader"
-config/version="1.0.0"
+config/version="1.1.0"
 run/main_scene="uid://dkql7x3bwjqlb"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://bukws6e6mjqnr"
