@@ -7,58 +7,70 @@ var id_mapping: Array[int] = []
 
 func _ready() -> void:
 	Steamworks.steamworks_ugc_items_retrieved.connect(on_ugc_items_retrieved)
+	Steamworks.steam_context_changed.connect(_on_steam_context_changed)
+	_reset_placeholder(_placeholder_text())
+
+
+func _on_steam_context_changed() -> void:
+	Steamworks.current_ugc_item = {}
+	_reset_placeholder(_placeholder_text())
+
+
+func _placeholder_text() -> String:
+	if not Steamworks.is_initialized:
+		return "(connect Steam for selected game)"
+	if Steamworks.app_id <= 0:
+		return "(select a game)"
+	return "(press Refresh Workshop List)"
+
+
+func _reset_placeholder(text: String) -> void:
+	id_mapping.clear()
+	clear()
+	add_item(text, 0)
+	disabled = true
+	selected = 0
+	_set_action_buttons_enabled(false)
 
 
 func on_ugc_items_retrieved() -> void:
-	var items = Steamworks.get_ugc_items()
+	if not Steamworks.is_initialized or Steamworks.app_id <= 0:
+		_reset_placeholder(_placeholder_text())
+		return
+
+	var items := Steamworks.get_ugc_items_for_current_app()
 	id_mapping.clear()
 	clear()
 
-	if items.size() > 0:
-		for item_id in items:
-			var item = items.get(item_id)
-			process_item(item)
-		disabled = false
-	else:
-		add_item("Empty", 0)
-		disabled = true
+	if items.is_empty():
+		_reset_placeholder("(no items for this game)")
+		return
+
+	for item_id in items:
+		var item: Dictionary = items[item_id]
+		process_item(item)
+
+	disabled = false
+	if id_mapping.size() > 0:
+		selected = 0
 
 	var item_id := get_selected_item_id()
 	_set_action_buttons_enabled(item_id > 0)
 
 
 func process_item(item: Dictionary) -> void:
-	var _result: int = item["result"]
-	var file_id: int = item["file_id"]
-	var _file_type: Steam.WorkshopFileType = item["file_type"]
-	var _creator_app_id: int = item["creator_app_id"]
-	var _consumer_app_id: int = item["consumer_app_id"]
-	var title: String = item["title"]
-	var _description: String = item["description"]
-	var _steam_id_owner: int = item["steam_id_owner"]
-	var _time_created: int = item["time_created"]
-	var _time_updated: int = item["time_updated"]
-	var _time_added_to_user_list: int = item["time_added_to_user_list"]
-	var _visibility: int = item["visibility"]
-	var _banned: bool = item["banned"]
-	var _accepted_for_use: bool = item["accepted_for_use"]
-	var _tags_truncated: bool = item["tags_truncated"]
-	var tags: String = item["tags"]
-	var _tag_list = tags.split(",")
-	var _handle_file: int = item["handle_file"]
-	var _handle_preview_file: int = item["handle_preview_file"]
-	var _file_name: String = item["file_name"]
-	var _file_size: int = item["file_size"]
-	var _preview_file_size: int = item["preview_file_size"]
-	var _url: String = item["url"]
-	var _votes_up: int = item["votes_up"]
-	var _votes_down: int = item["votes_down"]
-	var _score: float = item["score"]
-	var _num_children: int = item["num_children"]
-	var _total_files_size: int = item["total_files_size"]
+	if not Steamworks.ugc_item_belongs_to_app(item, Steamworks.app_id):
+		return
 
-	var item_label = title + " (" + str(file_id) + ")"
+	var file_id: int = int(item.get("file_id", 0))
+	if file_id <= 0:
+		return
 
+	var title: String = str(item.get("title", "Untitled")).strip_edges()
+	if title.is_empty():
+		title = "Untitled"
+
+	var item_label := "%s (%d)" % [title, file_id]
 	id_mapping.append(file_id)
 	add_item(item_label)
 
@@ -66,7 +78,7 @@ func process_item(item: Dictionary) -> void:
 func _on_item_selected(index: int) -> void:
 	if index < 0:
 		return
-	var item_name = get_item_text(index)
+	var item_name := get_item_text(index)
 	AppLogger.info("Steam Workshop Item selected: " + item_name)
 
 	var item_id := get_selected_item_id()

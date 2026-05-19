@@ -57,6 +57,29 @@ static func get_all_file_ids() -> Array:
 	return ids
 
 
+## Drafts created for a specific game (avoids showing items from another AppID after switching).
+static func get_file_ids_for_app(app_id: int) -> Array:
+	if app_id <= 0:
+		return []
+	_ensure_loaded()
+	const UgcItemRegistry = preload("res://Scripts/ugc_item_registry.gd")
+	var ids: Array = []
+	for key in _cache.keys():
+		var file_id := int(key)
+		if file_id <= 0:
+			continue
+		var draft: Dictionary = {}
+		if _cache[key] is Dictionary:
+			draft = _cache[key] as Dictionary
+		var draft_app := int(draft.get("app_id", 0))
+		if draft_app > 0:
+			if draft_app == app_id:
+				ids.append(file_id)
+		elif UgcItemRegistry.get_ids_for_app(app_id).has(file_id):
+			ids.append(file_id)
+	return ids
+
+
 static func erase_draft(file_id: int) -> void:
 	if file_id <= 0:
 		return

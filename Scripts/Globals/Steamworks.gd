@@ -201,12 +201,14 @@ func shutdown_steam() -> void:
 		Steam.steamShutdown()
 	is_initialized = false
 	ugc_items.clear()
+	current_ugc_item = {}
 	_ugc_request_handle = -1
 	_page_number = 1
 	_ugc_query_phase = UGC_QUERY_NONE
 	_details_ids_queue = PackedInt64Array()
 	_details_offset = 0
 	steam_context_changed.emit()
+	steamworks_ugc_items_retrieved.emit()
 
 
 func shutdown() -> void:
@@ -299,6 +301,29 @@ func get_user_steam_id() -> int:
 
 func get_ugc_items() -> Dictionary[int, Dictionary]:
 	return ugc_items
+
+
+func get_ugc_items_for_current_app() -> Dictionary[int, Dictionary]:
+	var out: Dictionary[int, Dictionary] = {}
+	if app_id <= 0:
+		return out
+	for file_id in ugc_items:
+		var item: Dictionary = ugc_items[file_id]
+		if ugc_item_belongs_to_app(item, app_id):
+			out[file_id] = item
+	return out
+
+
+func ugc_item_belongs_to_app(item: Dictionary, target_app_id: int) -> bool:
+	if target_app_id <= 0:
+		return false
+	var consumer := int(item.get("consumer_app_id", 0))
+	var creator := int(item.get("creator_app_id", 0))
+	if consumer > 0:
+		return consumer == target_app_id
+	if creator > 0:
+		return creator == target_app_id
+	return true
 
 #
 # Action Methods
@@ -721,7 +746,7 @@ func refresh_workshop_items() -> void:
 	if _ugc_request_handle != -1:
 		AppLogger.error("Could not refresh workshop items, request already in progress!")
 		return
-	for draft_id in UgcDraftStore.get_all_file_ids():
+	for draft_id in UgcDraftStore.get_file_ids_for_app(app_id):
 		var id := int(draft_id)
 		if id > 0 and not UgcItemRegistry.is_removed(app_id, id):
 			UgcItemRegistry.add(app_id, id)
@@ -858,6 +883,8 @@ func fetch_queried_ugc_items(count: int):
 		if UgcItemRegistry.is_removed(app_id, file_id):
 			continue
 		if int(item.get("result", Steam.RESULT_OK)) != Steam.RESULT_OK:
+			continue
+		if not ugc_item_belongs_to_app(item, app_id):
 			continue
 		ugc_items.set(file_id, item)
 		UgcItemRegistry.add(app_id, file_id)

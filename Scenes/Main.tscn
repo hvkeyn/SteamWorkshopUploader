@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://di7r3idru8g7v" path="res://scripts/ui/Main/log_display.gd" id="15_h1m7h"]
 [ext_resource type="Script" uid="uid://dhwvw4n1db1kn" path="res://scripts/ui/Main/edit_ugc_button.gd" id="16_2w5on"]
 [ext_resource type="Script" path="res://Scripts/ui/Main/delete_ugc_button.gd" id="17_delugc"]
+[ext_resource type="Script" path="res://Scripts/ui/Main/workshop_scope_label.gd" id="18_scope"]
 
 [sub_resource type="Theme" id="Theme_r150o"]
 
@@ -72,7 +73,9 @@ theme_override_constants/separation = 10
 
 [node name="Header" type="RichTextLabel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme = SubResource("Theme_r150o")
+theme_override_font_sizes/bold_font_size = 26
 bbcode_enabled = true
 text = "[b]Steam Workshop Uploader[/b]"
 fit_content = true
@@ -80,6 +83,7 @@ horizontal_alignment = 1
 
 [node name="TOSLabel" type="RichTextLabel" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "By using this tool, you agree to the terms of [u][url=\"tos\"]Steam's Workshop Legal Agreement.[/url][/u]"
 fit_content = true
@@ -109,11 +113,11 @@ theme_override_constants/separation = 16
 
 [node name="Panel1" type="PanelContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox"]
 clip_contents = true
-custom_minimum_size = Vector2(340, 0)
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.15
+size_flags_stretch_ratio = 1.0
 theme = ExtResource("1_r150o")
 
 [node name="Margin" type="MarginContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1"]
@@ -157,7 +161,7 @@ placeholder_text = "Search game by name or AppID…"
 
 [node name="SteamAppList" type="ItemList" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/Panel1/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 180)
+custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -180,7 +184,7 @@ script = ExtResource("3_rgh2o")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 1.0
+size_flags_stretch_ratio = 1.15
 theme_override_constants/separation = 12
 
 [node name="Panel" type="PanelContainer" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox"]
@@ -297,8 +301,21 @@ theme_override_constants/separation = 8
 [node name="LabelManage" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 0
 text = "Manage Workshop items"
 horizontal_alignment = 1
+
+[node name="LabelWorkshopScope" type="Label" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 13
+text = "Items for: (not connected)"
+horizontal_alignment = 1
+autowrap_mode = 2
+script = ExtResource("18_scope")
 
 [node name="ButtonRefreshUGC" type="Button" parent="VBox/OuterMargin/MainPanel/MainPanelMargin/VBox/MarginContainer/VBox/HBox/VBox/Panel2/Margin/VBox"]
 layout_mode = 2
@@ -355,8 +372,8 @@ text = "Log:"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 0.9
-custom_minimum_size = Vector2(0, 140)
+size_flags_stretch_ratio = 0.35
+custom_minimum_size = Vector2(0, 88)
 editable = false
 wrap_mode = 1
 script = ExtResource("15_h1m7h")
