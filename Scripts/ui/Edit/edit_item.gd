@@ -1,8 +1,11 @@
 extends Control
 
 const DraftStore = preload("res://Scripts/ugc_draft_store.gd")
+const UploadProgressScene = preload("res://Scenes/ui/WorkshopUploadProgress.tscn")
+const UploadPaths = preload("res://Scripts/workshop_upload_paths.gd")
 
 var _save_draft_queued: bool = false
+var _upload_dialog: Window = null
 var _suppress_draft_save: bool = false
 var _autosave_connected: bool = false
 
@@ -227,71 +230,125 @@ func get_visiblity() -> Steam.RemoteStoragePublishedFileVisibility:
 
 
 func _on_button_submit_pressed() -> void:
-	AppLogger.info("Submitting UGC changes...")
+	var file_id: int = int(Steamworks.current_ugc_item.get("file_id", -1))
+	var change_notes: String = %LineEditChangeNotes.text.strip_edges()
 
-	var file_id: int = Steamworks.current_ugc_item["file_id"]
-	var new_ugc_data = Steamworks.current_ugc_item.duplicate()
+	if change_notes.is_empty():
+		_show_blocking_error(
+			"Fill in \"Change notes\" at the bottom of the editor before submitting."
+		)
+		return
 
+	_open_upload_dialog(file_id)
+	_upload_dialog.add_log("Preparing workshop item %d for upload." % file_id)
+
+	var new_ugc_data: Dictionary = Steamworks.current_ugc_item.duplicate()
 	new_ugc_data["title"] = %LineEditTitle.text
 
 	if %CheckBoxDescriptionShouldUpdate.button_pressed:
-		AppLogger.info("Including description in upload...")
-		new_ugc_data["description"] = %RichTextDescription.text
+		new_ugc_data["description"] = %TextEditDescription.text
+		_upload_dialog.add_log("Description will be updated (%d chars)." % new_ugc_data["description"].length())
 	else:
 		new_ugc_data["description"] = ""
+		_upload_dialog.add_log("Description update skipped.")
 
 	new_ugc_data["visibility"] = get_visiblity()
 	new_ugc_data["tags"] = ",".join(%HBoxTagList.current_tags)
 
 	if %ButtonSelectPreviewImage.preview_image_path != "":
 		new_ugc_data["preview_path"] = %ButtonSelectPreviewImage.preview_image_path
+		_upload_dialog.add_log("Preview: " + new_ugc_data["preview_path"])
 	else:
 		new_ugc_data["preview_path"] = ""
-
-	var change_notes: String = %LineEditChangeNotes.text
-
-	if change_notes == "":
-		_show_blocking_error("Change notes are required before submitting.")
-		return
 
 	var upload_dir: String = ""
 	var base_dir: String = %ButtonBrowseFiles.upload_target_path
 
 	if base_dir == "":
-		AppLogger.info("No file upload specified, ignoring...")
+		_upload_dialog.add_log("No content folder selected.")
 	elif %CheckBoxExcludeFiles.button_pressed:
-		AppLogger.info("File upload specified: " + base_dir)
-		var temp_dir = TempFolder.create_temp_folder()
+		_upload_dialog.add_log("Building filtered file list from: " + base_dir)
+		_upload_dialog.add_log("Scanning files (large mods can take a minute)…")
+		await get_tree().process_frame
 
-		var export_data: Dictionary[String, PackedStringArray] = %ItemListFiles.export_data()
-
-		if export_data.size() == 0:
-			_show_blocking_error("Could not build the file list for upload.")
+		var stage_parent := ""
+		if UploadPaths.is_steam_library_path(base_dir):
+			stage_parent = UploadPaths.staging_parent_for_source(base_dir)
+		var temp_dir := TempFolder.create_temp_folder(stage_parent)
+		if temp_dir.is_empty():
+			_upload_dialog.fail_before_submit("Could not create temporary upload folder.")
 			return
 
-		var relative_paths = export_data["relative_paths"]
-		var absolute_paths = export_data["absolute_paths"]
-		var count = relative_paths.size()
+		var export_data: Dictionary = %ItemListFiles.export_data()
+		if export_data.is_empty():
+			_upload_dialog.fail_before_submit("Could not build the file list for upload.")
+			return
 
-		AppLogger.info("Copying " + str(count) + " files to: " + temp_dir)
+		var relative_paths: PackedStringArray = export_data["relative_paths"]
+		var absolute_paths: PackedStringArray = export_data["absolute_paths"]
+		var count: int = relative_paths.size()
+		_upload_dialog.add_log("Copying %d files to temporary folder…" % count)
 
-		var success = TempFolder.copy_files_to_folder(temp_dir, absolute_paths, relative_paths)
-		if not success:
-			_show_blocking_error("Failed to copy files to the temporary upload folder.")
+		if not TempFolder.copy_files_to_folder(temp_dir, absolute_paths, relative_paths):
+			_upload_dialog.fail_before_submit("Failed to copy files to the temporary upload folder.")
 			return
 
 		upload_dir = temp_dir
+		_upload_dialog.add_log("Temporary content ready: " + temp_dir)
 	else:
-		AppLogger.info("File upload specified: " + base_dir)
-		AppLogger.info("Exclusion disabled, copying folder as-is...")
 		upload_dir = base_dir
+		_upload_dialog.add_log("Using full folder (no exclusion): " + base_dir)
 
 	new_ugc_data["upload_path"] = upload_dir
+	new_ugc_data["metadata_only"] = false
 
-	Steamworks.update_workshop_item(file_id, new_ugc_data, change_notes)
+	if upload_dir.is_empty():
+		_upload_dialog.fail_before_submit(
+			"No content folder selected.\n"
+			+ "Use \"Browse Files\" and choose COPY_TO_GAME_FOLDER before submitting."
+		)
+		return
 
-	DraftStore.erase_draft(file_id)
-	get_tree().change_scene_to_file("res://Scenes/Main.tscn")
+	if new_ugc_data["preview_path"] == "":
+		_upload_dialog.add_log("WARNING: No preview image — Steam page will show a blank thumbnail.")
+
+	if not Steamworks.update_workshop_item(file_id, new_ugc_data, change_notes):
+		_upload_dialog.fail_before_submit("Could not start Steam upload. See log above.")
+		return
+
+	_upload_dialog.mark_waiting_for_steam()
+
+
+func _open_upload_dialog(file_id: int) -> void:
+	if _upload_dialog != null and is_instance_valid(_upload_dialog):
+		_upload_dialog.queue_free()
+
+	_upload_dialog = UploadProgressScene.instantiate()
+	_upload_dialog.upload_finished.connect(_on_workshop_upload_completed)
+	var host := get_window()
+	if host:
+		host.add_child(_upload_dialog)
+	else:
+		add_child(_upload_dialog)
+	_upload_dialog.open_for_upload(file_id)
+	_set_submit_ui_busy(true)
+
+
+func _set_submit_ui_busy(busy: bool) -> void:
+	var submit := get_node_or_null("%ButtonSubmit") as Button
+	var revert := get_node_or_null("%ButtonRevert") as Button
+	if submit:
+		submit.disabled = busy
+		submit.text = "Uploading…" if busy else "Submit Changes"
+	if revert:
+		revert.disabled = busy
+
+
+func _on_workshop_upload_completed(result: int, file_id: int, need_to_accept_tos: bool) -> void:
+	_set_submit_ui_busy(false)
+
+	if result == Steam.RESULT_OK and not need_to_accept_tos:
+		DraftStore.erase_draft(file_id)
 
 
 func _show_blocking_error(message: String) -> void:

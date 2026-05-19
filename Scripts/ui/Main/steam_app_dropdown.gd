@@ -169,7 +169,7 @@ func _update_initialize_button() -> void:
 	var app_id := get_item_id(selected) if selected >= 0 else -1
 	if app_id <= 0:
 		app_id = Steamworks.app_id
-	var connected := (
+	var connected: bool = (
 		Steamworks.is_initialized
 		and app_id > 0
 		and Steamworks.app_id == app_id

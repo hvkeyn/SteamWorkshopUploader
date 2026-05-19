@@ -6,3 +6,6 @@
 
 # Local Godot editor install (use start.ps1 to point at your copy)
 Godot_v4.6.2/
+
+# Written at runtime when Steam initializes for the selected game
+steam_appid.txt

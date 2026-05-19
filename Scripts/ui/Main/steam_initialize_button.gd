@@ -25,7 +25,7 @@ func _on_pressed() -> void:
 
 func _update_state() -> void:
 	var selected := _get_selected_app_id()
-	var connected := (
+	var connected: bool = (
 		Steamworks.is_initialized
 		and selected > 0
 		and Steamworks.app_id == selected

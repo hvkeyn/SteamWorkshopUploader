@@ -47,6 +47,16 @@ static func _is_effectively_empty(draft: Dictionary) -> bool:
 	return true
 
 
+static func get_all_file_ids() -> Array:
+	_ensure_loaded()
+	var ids: Array = []
+	for key in _cache.keys():
+		var file_id := int(key)
+		if file_id > 0:
+			ids.append(file_id)
+	return ids
+
+
 static func erase_draft(file_id: int) -> void:
 	if file_id <= 0:
 		return
