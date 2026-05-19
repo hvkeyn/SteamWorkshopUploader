@@ -89,11 +89,11 @@ func rebuild_list() -> void:
 func _resolve_app_name(app: SteamApp) -> String:
 	if not app.name.begins_with("App "):
 		return app.name
-	var from_master := MasterList.lookup_app_name(app.app_id)
+	var from_master: String = MasterList.lookup_app_name(app.app_id)
 	if not from_master.is_empty():
 		app.name = from_master
 		return from_master
-	var from_cache := Steamworks.get_cached_app_name(app.app_id)
+	var from_cache: String = Steamworks.get_cached_app_name(app.app_id)
 	if not from_cache.is_empty():
 		app.name = from_cache
 		return from_cache
@@ -222,7 +222,7 @@ func _apply_app_selection(app_id: int) -> void:
 	if app_name.is_empty():
 		app_name = "App %d" % app_id
 
-	var needs_reinit := not Steamworks.is_initialized or Steamworks.app_id != app_id
+	var needs_reinit: bool = not Steamworks.is_initialized or Steamworks.app_id != app_id
 	if not needs_reinit:
 		_update_initialize_button()
 		return
@@ -251,7 +251,7 @@ func _update_initialize_button() -> void:
 	var selected := get_selected_app_id()
 	if selected <= 0:
 		selected = Steamworks.app_id
-	var connected := (
+	var connected: bool = (
 		Steamworks.is_initialized
 		and selected > 0
 		and Steamworks.app_id == selected
